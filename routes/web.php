@@ -28,8 +28,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     
     // Order Status & Management
-    Route::post('/orders/{order}/check-status', [OrderController::class, 'checkStatus'])
-        ->name('order.check-status');
+    Route::get('/orders/{order}/check-status', [OrderController::class, 'checkStatus'])
+        ->name('orders.check-status');
     
     Route::post('/orders/{order}/request-refill', [OrderController::class, 'requestRefill'])
         ->name('order.request-refill');

@@ -1,4 +1,4 @@
-    @include('components.g-header')
+@include('components.g-header')
     @include('components.nav')
 
     <main class="nxl-container">
@@ -25,6 +25,14 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card stretch stretch-full">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center w-100">
+                                    <h5 class="card-title mb-0">Your Orders</h5>
+                                    <button onclick="window.location.reload()" class="btn btn-sm btn-light">
+                                        <i class="feather-refresh-cw me-1"></i> Refresh Status
+                                    </button>
+                                </div>
+                            </div>
                             <div class="card-body custom-card-action p-0">
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0">
@@ -37,6 +45,7 @@
                                                 <th>Charge</th>
                                                 <th>Status</th>
                                                 <th>Date</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -53,22 +62,43 @@
                                                     <td>₦{{ number_format($order->charge, 2) }}</td>
                                                     <td>
                                                         @if($order->status == 'completed')
-                                                            <span class="badge bg-soft-success text-success">Completed</span>
+                                                            <span class="badge bg-soft-success text-success">
+                                                                <i class="feather-check-circle me-1"></i> Completed
+                                                            </span>
                                                         @elseif($order->status == 'processing')
-                                                            <span class="badge bg-soft-warning text-warning">Processing</span>
+                                                            <span class="badge bg-soft-warning text-warning">
+                                                                <i class="feather-loader me-1"></i> Processing
+                                                            </span>
                                                         @elseif($order->status == 'pending')
-                                                            <span class="badge bg-soft-primary text-primary">Pending</span>
+                                                            <span class="badge bg-soft-primary text-primary">
+                                                                <i class="feather-clock me-1"></i> Pending
+                                                            </span>
+                                                        @elseif($order->status == 'partial')
+                                                            <span class="badge bg-soft-info text-info">
+                                                                <i class="feather-pie-chart me-1"></i> Partial
+                                                            </span>
                                                         @elseif($order->status == 'cancelled')
-                                                            <span class="badge bg-soft-danger text-danger">Cancelled (Refunded)</span>
+                                                            <span class="badge bg-soft-danger text-danger">
+                                                                <i class="feather-x-circle me-1"></i> Cancelled (Refunded)
+                                                            </span>
                                                         @else
                                                             <span class="badge bg-soft-secondary text-secondary">{{ ucfirst($order->status) }}</span>
                                                         @endif
                                                     </td>
                                                     <td>{{ $order->created_at->diffForHumans() }}</td>
+                                                    <td>
+                                                        @if($order->api_order_id && in_array($order->status, ['pending', 'processing']))
+                                                            <a href="{{ route('orders.check-status', $order->id) }}" 
+                                                               class="btn btn-sm btn-light" 
+                                                               title="Check Status">
+                                                                <i class="feather-refresh-cw"></i>
+                                                            </a>
+                                                        @endif
+                                                    </td>
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="7" class="text-center py-5">
+                                                    <td colspan="8" class="text-center py-5">
                                                         <div class="text-muted mb-3">No orders found.</div>
                                                         <a href="{{ route('order.create') }}" class="btn btn-primary btn-sm">Place Your First Order</a>
                                                     </td>

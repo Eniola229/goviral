@@ -3,8 +3,13 @@
         <div class="m-header">
             <a href="{{ route('dashboard') }}" class="b-brand">
                 <!-- ========   change your logo hear   ============ -->
-                <img src="assets/images/logo-full.png" alt="" class="logo logo-lg" />
-                <img src="assets/images/logo-abbr.png" alt="" class="logo logo-sm" />
+            <img src="{{ asset('assets/images/BOOSTER-LOGO.png') }}"
+                 alt=""
+                 class="logo logo-lg"
+                 style="width: 140px; height: auto; display: block; margin: 0 auto;" />
+
+
+                <img src="{{ asset('assets/images/B.png') }}" alt="" class="logo logo-sm" />
             </a>
         </div>
         <div class="navbar-content">
@@ -36,7 +41,7 @@
                 <!-- Wallet Menu -->
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-wallet"></i></span>
+                        <span class="nxl-micon"><i class="feather-credit-card"></i></span>
                         <span class="nxl-mtext">Wallet</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
                     </a>
                     <ul class="nxl-submenu">
@@ -224,12 +229,12 @@
                 <!-- User Profile Dropdown -->
                 <div class="dropdown nxl-h-item">
                     <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside">
-                        <img src="https://www.vectorstock.com/royalty-free-vector/male-profile-avatar-with-brown-hair-vector-12055105" alt="user-image" class="img-fluid user-avtar me-0" />
+                        <img src="{{ asset('assets/images/profile.jpg') }}" alt="profile" class="img-fluid user-avtar me-0" />
                     </a>
                     <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                         <div class="dropdown-header">
                             <div class="d-flex align-items-center">
-                                <img src="https://www.vectorstock.com/royalty-free-vector/male-profile-avatar-with-brown-hair-vector-12055105" alt="user-image" class="img-fluid user-avtar" />
+                                <img src="{{ asset('assets/images/profile.jpg') }}" alt="profile" class="img-fluid user-avtar" />
                                 <div>
                                     <h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6>
                                     <span class="fs-12 fw-medium text-muted">{{ auth()->user()->email }}</span>
@@ -242,7 +247,7 @@
                                 <span>Profile Details</span>
                             </a>
                             <a href="{{ route('wallet.index') }}" class="dropdown-item">
-                                <i class="feather-wallet"></i>
+                                <i class="feather-credit-card"></i>
                                 <span>Billing & Payments</span>
                             </a>
                             <a href="{{ route('profile.index') }}" class="dropdown-item">

@@ -328,14 +328,84 @@ class OrderController extends Controller
         }
     }
 
-    // Order History
+    // Order History - WITH AUTO STATUS UPDATE
     public function index()
     {
         $orders = Auth::user()->orders()->latest()->paginate(10);
+        
+        // Auto-update status for pending/processing orders
+        $this->autoUpdateOrderStatuses($orders);
+        
         return view('order.index', compact('orders'));
     }
 
-    // Check Order Status
+    /**
+     * Automatically check and update statuses for pending/processing orders
+     */
+    protected function autoUpdateOrderStatuses($orders)
+    {
+        foreach ($orders as $order) {
+            // Only check orders that are not completed or cancelled
+            if (in_array($order->status, ['pending', 'processing']) && $order->api_order_id) {
+                try {
+                    // Get status from API
+                    $status = $this->ogaviralService->getOrderStatus($order->api_order_id);
+                    
+                    if (isset($status['status'])) {
+                        // Map API status to our database status
+                        $apiStatus = $status['status'];
+                        $newStatus = $this->mapApiStatus($apiStatus);
+                        
+                        // Only update if status has changed
+                        if ($order->status !== $newStatus) {
+                            $oldStatus = $order->status;
+                            
+                            // Update order status
+                            $order->update([
+                                'status' => $newStatus,
+                                'api_response' => json_encode($status),
+                            ]);
+                            
+                            // Log the auto-update
+                            $this->logOrderAction(
+                                'auto_status_update',
+                                'AUTO-' . $order->id,
+                                0,
+                                'success',
+                                'Order status auto-updated from ' . $oldStatus . ' to ' . $newStatus,
+                                [
+                                    'order_id' => $order->id,
+                                    'api_order_id' => $order->api_order_id,
+                                    'old_status' => $oldStatus,
+                                    'new_status' => $newStatus,
+                                ],
+                                $status
+                            );
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Log error but don't stop the page from loading
+                    \Log::error('Auto status update failed for order ' . $order->id . ': ' . $e->getMessage());
+                    
+                    $this->logOrderAction(
+                        'auto_status_update_failed',
+                        'AUTO-' . $order->id,
+                        0,
+                        'failed',
+                        'Auto status update failed',
+                        [
+                            'order_id' => $order->id,
+                            'api_order_id' => $order->api_order_id,
+                        ],
+                        null,
+                        $e->getMessage()
+                    );
+                }
+            }
+        }
+    }
+
+    // Check Order Status (Manual)
     public function checkStatus($orderId)
     {
         $order = Auth::user()->orders()->findOrFail($orderId);
@@ -361,9 +431,15 @@ class OrderController extends Controller
         $status = $this->ogaviralService->getOrderStatus($order->api_order_id);
 
         if (isset($status['status'])) {
+            $oldStatus = $order->status;
+            
+            // Map API status to our database status
+            $apiStatus = $status['status'];
+            $newStatus = $this->mapApiStatus($apiStatus);
+            
             // Update local order status
             $order->update([
-                'status' => strtolower($status['status']),
+                'status' => $newStatus,
                 'api_response' => json_encode($status),
             ]);
 
@@ -374,7 +450,11 @@ class OrderController extends Controller
                 0,
                 'success',
                 'Order status updated successfully',
-                ['order_id' => $order->id, 'old_status' => $order->status],
+                [
+                    'order_id' => $order->id, 
+                    'old_status' => $oldStatus,
+                    'new_status' => $status['status']
+                ],
                 $status
             );
 
@@ -463,6 +543,24 @@ class OrderController extends Controller
             'type' => 'error',
             'message' => $errorMessage
         ]);
+    }
+
+    /**
+     * Map Ogaviral API status to our database status
+     */
+    protected function mapApiStatus($apiStatus)
+    {
+        $statusMap = [
+            'Pending' => 'pending',
+            'In progress' => 'processing',
+            'Processing' => 'processing',
+            'Completed' => 'completed',
+            'Partial' => 'partial',
+            'Cancelled' => 'cancelled',
+            'Canceled' => 'cancelled',
+        ];
+        
+        return $statusMap[$apiStatus] ?? strtolower($apiStatus);
     }
 
     /**

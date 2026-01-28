@@ -112,18 +112,21 @@
                                     <div class="d-flex align-items-center justify-content-between">
                                         <a href="javascript:void(0);" class="fs-12 fw-medium text-muted">Success Rate</a>
                                         <div class="w-100 text-end">
-                                            <span class="fs-12 text-success">High</span>
+                                            @php
+                                                $successRate = $totalOrders > 0 ? round(($completedOrders / $totalOrders) * 100) : 0;
+                                            @endphp
+                                            <span class="fs-12 text-success">{{ $successRate }}%</span>
                                         </div>
                                     </div>
                                     <div class="progress mt-2 ht-3">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: 98%"></div>
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ $successRate }}%"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- [Processing Orders] -->
+                    <!-- [Processing Orders - UPDATED] -->
                     <div class="col-xxl-3 col-md-6">
                         <div class="card stretch stretch-full">
                             <div class="card-body">
@@ -133,9 +136,9 @@
                                             <i class="feather-refresh-cw"></i>
                                         </div>
                                         <div>
-                                            <!-- Real Data: Processing -->
+                                            <!-- Real Data: Processing (In progress) -->
                                             <div class="fs-4 fw-bold text-dark">{{ $processingOrders }}</div>
-                                            <h3 class="fs-13 fw-semibold text-truncate-1-line">Processing</h3>
+                                            <h3 class="fs-13 fw-semibold text-truncate-1-line">In Progress</h3>
                                         </div>
                                     </div>
                                     <a href="{{ route('orders.index') }}">
@@ -150,7 +153,10 @@
                                         </div>
                                     </div>
                                     <div class="progress mt-2 ht-3">
-                                        <div class="progress-bar bg-info" role="progressbar" style="width: 40%"></div>
+                                        @php
+                                            $processingPercentage = $totalOrders > 0 ? round(($processingOrders / $totalOrders) * 100) : 0;
+                                        @endphp
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ $processingPercentage }}%"></div>
                                     </div>
                                 </div>
                             </div>
@@ -190,13 +196,25 @@
                                                     <td>{{ $order->created_at->format('M d, Y') }}</td>
                                                     <td>
                                                         @if($order->status == 'completed')
-                                                            <span class="badge bg-soft-success text-success">Completed</span>
+                                                            <span class="badge bg-soft-success text-success">
+                                                                <i class="feather-check-circle me-1"></i> Completed
+                                                            </span>
                                                         @elseif($order->status == 'processing')
-                                                            <span class="badge bg-soft-warning text-warning">Processing</span>
+                                                            <span class="badge bg-soft-info text-info">
+                                                                <i class="feather-loader me-1"></i> In Progress
+                                                            </span>
                                                         @elseif($order->status == 'pending')
-                                                            <span class="badge bg-soft-primary text-primary">Pending</span>
+                                                            <span class="badge bg-soft-warning text-warning">
+                                                                <i class="feather-clock me-1"></i> Pending
+                                                            </span>
+                                                        @elseif($order->status == 'partial')
+                                                            <span class="badge bg-soft-primary text-primary">
+                                                                <i class="feather-pie-chart me-1"></i> Partial
+                                                            </span>
                                                         @elseif($order->status == 'cancelled')
-                                                            <span class="badge bg-soft-danger text-danger">Cancelled</span>
+                                                            <span class="badge bg-soft-danger text-danger">
+                                                                <i class="feather-x-circle me-1"></i> Cancelled
+                                                            </span>
                                                         @else
                                                             <span class="badge bg-soft-secondary text-secondary">{{ ucfirst($order->status) }}</span>
                                                         @endif

@@ -101,31 +101,31 @@ class OgaviralService
      * Get Services List
      */
 
-public function getServices()
-{
-    $response = $this->makeRequest('services');
+    public function getServices()
+    {
+        $response = $this->makeRequest('services');
 
-    // Check if valid and no error key exists
-    if (is_array($response) && !isset($response['error'])) {
-        return $response;
+        // Check if valid and no error key exists
+        if (is_array($response) && !isset($response['error'])) {
+            return $response;
+        }
+
+        // --- ERROR HANDLING START ---
+        
+        // 1. Log the specific error message if it exists in the response
+        if (isset($response['error'])) {
+            Log::error('Ogaviral API Error: ' . $response['error']);
+        } 
+        // 2. If the response format is totally unexpected, log the whole thing
+        else {
+            Log::error('Ogaviral API: Unexpected response format', ['response' => $response]);
+        }
+        
+        // --- ERROR HANDLING END ---
+
+        // Return empty array 
+        return [];
     }
-
-    // --- ERROR HANDLING START ---
-    
-    // 1. Log the specific error message if it exists in the response
-    if (isset($response['error'])) {
-        Log::error('Ogaviral API Error: ' . $response['error']);
-    } 
-    // 2. If the response format is totally unexpected, log the whole thing
-    else {
-        Log::error('Ogaviral API: Unexpected response format', ['response' => $response]);
-    }
-    
-    // --- ERROR HANDLING END ---
-
-    // Return empty array (as requested)
-    return [];
-}
 
     /**
      * Place Order
