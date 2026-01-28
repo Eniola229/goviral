@@ -1,0 +1,221 @@
+@include('components.g-header')
+@include('components.nav')
+
+<!-- Make sure you have FontAwesome linked in your layout or head -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<main class="nxl-container">
+    <div class="nxl-content">
+        <div class="page-header">
+            <div class="page-header-left d-flex align-items-center">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">New Order</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item">Order</li>
+                    <li class="breadcrumb-item">New</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card stretch stretch-full">
+                        <div class="card-header">
+                            <h5 class="card-title">Place a New Order</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ route('order.store') }}">
+                                @csrf
+                                
+                                <!-- 1. Platform Selection (Icons) -->
+                                <div class="mb-4">
+                                    <label class="form-label mb-3">Select Platform</label>
+                                    <div class="d-flex flex-wrap gap-3" id="platform-container">
+                                        
+                                        @foreach($groupedServices as $platformName => $data)
+                                            <button type="button" 
+                                                    class="btn platform-btn btn-outline-secondary rounded-circle p-3 d-flex flex-column align-items-center justify-content-center"
+                                                    style="width: 80px; height: 80px;"
+                                                    data-platform="{{ $platformName }}"
+                                                    onclick="selectPlatform('{{ $platformName }}')">
+                                                <i class="{{ $data['icon'] }} fa-2x mb-1"></i>
+                                                <small style="font-size: 10px;">{{ $platformName }}</small>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <!-- 2. Service Selection (Dropdown) -->
+                                <div class="mb-3">
+                                    <label class="form-label">Select Service</label>
+                                    <select name="service_id" id="service_id" class="form-select" disabled required onchange="updateServiceInfo()">
+                                        <option value="">-- Please select a platform above --</option>
+                                    </select>
+                                    <div class="form-text" id="service_info"></div>
+                                </div>
+
+                                <!-- Hidden Service Name -->
+                                <input type="hidden" name="service_name" id="service_name">
+
+                                <!-- Link -->
+                                <div class="mb-3">
+                                    <label class="form-label">Link</label>
+                                    <input type="url" name="link" class="form-control" placeholder="https://..." required>
+                                    <div class="form-text">Make sure your account is public.</div>
+                                </div>
+
+                                <!-- Quantity -->
+                                <div class="mb-3">
+                                    <label class="form-label">Quantity</label>
+                                    <input type="number" name="quantity" id="quantity" class="form-control" placeholder="Min: 10" disabled oninput="calculateTotal()">
+                                    <div class="form-text" id="quantity_info">Select a service to see limits.</div>
+                                </div>
+
+                                <!-- Total Price Display -->
+                                <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                    <span>Total Charge:</span>
+                                    <h4 class="m-0 fw-bold text-primary">₦<span id="total_charge">0.00</span></h4>
+                                </div>
+
+                                <input type="hidden" name="charge" id="charge" value="0">
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">Place Order</button>
+                                </div>
+
+                                @error('service_id')
+                                    <div class="text-danger mt-2">{{ $message }}</div>
+                                @enderror
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@include('components.g-footer')
+
+<!-- Script -->
+<script>
+    // Pass the grouped PHP data to JavaScript
+    const groupedData = {!! json_encode($groupedServices) !!};
+
+    function selectPlatform(platformName) {
+        // 1. Visual Feedback on Buttons
+        document.querySelectorAll('.platform-btn').forEach(btn => {
+            if(btn.dataset.platform === platformName) {
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-primary'); // Highlight selected
+            } else {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-secondary');
+            }
+        });
+
+        // 2. Populate the Dropdown
+        const selectBox = document.getElementById('service_id');
+        const quantityBox = document.getElementById('quantity');
+        
+        // Clear existing options
+        selectBox.innerHTML = '<option value="">-- Choose a Service --</option>';
+        
+        // Get services for selected platform
+        const services = groupedData[platformName].services;
+
+        services.forEach(service => {
+            const option = document.createElement('option');
+            option.value = service.service;
+            option.text = `${service.name} - ₦${parseFloat(service.rate).toFixed(2)} / 1k`;
+            
+            // Attach data attributes for logic
+            option.setAttribute('data-name', service.name);
+            option.setAttribute('data-rate', service.rate);
+            option.setAttribute('data-min', service.min);
+            option.setAttribute('data-max', service.max);
+            option.setAttribute('data-category', service.category);
+            
+            selectBox.appendChild(option);
+        });
+
+        // Enable fields
+        selectBox.disabled = false;
+        quantityBox.disabled = true; // Wait until they pick a service
+        document.getElementById('service_info').innerText = '';
+        document.getElementById('quantity_info').innerText = 'Select a service to see limits.';
+        updateTotalDisplay(0);
+    }
+
+    function updateServiceInfo() {
+        const select = document.getElementById('service_id');
+        const selectedOption = select.options[select.selectedIndex];
+        const quantityBox = document.getElementById('quantity');
+        
+        if (selectedOption.value === '') {
+            quantityBox.disabled = true;
+            document.getElementById('service_info').innerHTML = '';
+            document.getElementById('quantity_info').innerHTML = 'Select a service to see limits.';
+            updateTotalDisplay(0);
+            return;
+        }
+        
+        // Enable quantity input
+        quantityBox.disabled = false;
+        
+        // Update Hidden Name
+        document.getElementById('service_name').value = selectedOption.getAttribute('data-name');
+        
+        // Get min/max
+        const minQty = selectedOption.getAttribute('data-min');
+        const maxQty = selectedOption.getAttribute('data-max');
+        const category = selectedOption.getAttribute('data-category');
+        
+        document.getElementById('service_info').innerHTML = `Category: ${category}<br>Min: ${minQty}, Max: ${maxQty}`;
+        
+        quantityBox.min = minQty;
+        quantityBox.max = maxQty;
+        quantityBox.placeholder = `Min: ${minQty}, Max: ${maxQty}`;
+        quantityBox.value = ''; // Reset quantity when service changes
+        
+        document.getElementById('quantity_info').innerHTML = `Enter quantity between ${minQty} and ${maxQty}.`;
+        
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        const select = document.getElementById('service_id');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        if (selectedOption.value === '') {
+            updateTotalDisplay(0);
+            return;
+        }
+        
+        const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+        const rate = parseFloat(selectedOption.getAttribute('data-rate')) || 0;
+        const minQty = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+        const maxQty = parseFloat(selectedOption.getAttribute('data-max')) || 0;
+        
+        if (quantity > 0 && (quantity < minQty || quantity > maxQty)) {
+            document.getElementById('quantity_info').innerHTML = 
+                `<span class="text-danger">Quantity must be between ${minQty} and ${maxQty}!</span>`;
+        } else if (quantity > 0) {
+             document.getElementById('quantity_info').innerHTML = 
+                `Enter quantity between ${minQty} and ${maxQty}.`;
+        }
+        
+        let total = (quantity / 1000) * rate;
+        updateTotalDisplay(total);
+    }
+
+    function updateTotalDisplay(total) {
+        const formattedTotal = total.toFixed(2);
+        document.getElementById('total_charge').innerText = formattedTotal;
+        document.getElementById('charge').value = formattedTotal;
+    }
+</script>

@@ -1,0 +1,3 @@
+welcome 
+
+<a href="{{ url('login') }}">Login</a>
