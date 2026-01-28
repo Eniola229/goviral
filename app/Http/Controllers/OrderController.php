@@ -39,6 +39,7 @@ class OrderController extends Controller
             'Discord'   => 'fa-brands fa-discord',
             'Snapchat'  => 'fa-brands fa-snapchat',
             'Twitch'    => 'fa-brands fa-twitch',
+            'WhatsApp'    => 'fa-brands fa-whatsapp',
             'Website'   => 'fa-solid fa-globe', // Generic for others
         ];
 
@@ -62,6 +63,7 @@ class OrderController extends Controller
             elseif (stripos($serviceName, 'Discord') !== false) $platform = 'Discord';
             elseif (stripos($serviceName, 'Snapchat') !== false) $platform = 'Snapchat';
             elseif (stripos($serviceName, 'Twitch') !== false) $platform = 'Twitch';
+            elseif (stripos($serviceName, 'WhatsApp') !== false) $platform = 'WhatsApp';
             
             // Get the icon, default to globe if not found
             $icon = $platformIcons[$platform] ?? $platformIcons['Website'];

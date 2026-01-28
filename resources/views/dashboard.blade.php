@@ -243,7 +243,7 @@
                             <div class="card-body">
                                 <h5 class="card-title mb-4">Total Spent</h5>
                                 <h2 class="display-6 fw-bold text-dark mb-3">₦{{ number_format($totalSpent, 2) }}</h2>
-                                <p class="text-muted mb-4">Lifetime spending on Viral.com</p>
+                                <p class="text-muted mb-4">Lifetime spending on Booster.com</p>
                                 
                                 <hr class="border-dashed my-4">
                                 

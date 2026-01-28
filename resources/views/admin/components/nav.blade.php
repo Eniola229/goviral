@@ -1,0 +1,114 @@
+<nav class="nxl-navigation">
+    <div class="navbar-wrapper">
+        <div class="m-header">
+            <a href="{{ route('admin.dashboard') }}" class="b-brand">
+                <img src="{{ asset('assets/images/BOOSTER-LOGO.png') }}"
+                     alt=""
+                     class="logo logo-lg"
+                     style="width: 140px; height: auto; display: block; margin: 0 auto;" />
+                <img src="{{ asset('assets/images/B.png') }}" alt="" class="logo logo-sm" />
+            </a>
+        </div>
+        <div class="navbar-content">
+            <ul class="nxl-navbar">
+                <li class="nxl-item nxl-caption">
+                    <label>Admin Panel</label>
+                </li>
+                
+                <!-- Dashboard -->
+                <li class="nxl-item">
+                    <a href="{{ route('admin.dashboard') }}" class="nxl-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                        <span class="nxl-micon"><i class="feather-home"></i></span>
+                        <span class="nxl-mtext">Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- Customers -->
+                <li class="nxl-item">
+                    <a href="{{ route('admin.customers.index') }}" class="nxl-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+                        <span class="nxl-micon"><i class="feather-users"></i></span>
+                        <span class="nxl-mtext">Customers</span>
+                    </a>
+                </li>
+
+                <!-- Orders -->
+                <li class="nxl-item">
+                    <a href="{{ route('admin.orders.index') }}" class="nxl-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+                        <span class="nxl-micon"><i class="feather-shopping-cart"></i></span>
+                        <span class="nxl-mtext">Orders</span>
+                    </a>
+                </li>
+
+                <!-- Wallet Transactions -->
+                <li class="nxl-item">
+                    <a href="{{ route('admin.wallet.index') }}" class="nxl-link {{ request()->routeIs('admin.wallet.*') ? 'active' : '' }}">
+                        <span class="nxl-micon"><i class="feather-credit-card"></i></span>
+                        <span class="nxl-mtext">Wallet</span>
+                    </a>
+                </li>
+
+                <!-- Support Tickets -->
+                <li class="nxl-item">
+                    <a href="{{ route('admin.support.index') }}" class="nxl-link {{ request()->routeIs('admin.support.*') ? 'active' : '' }}">
+                        <span class="nxl-micon"><i class="feather-life-buoy"></i></span>
+                        <span class="nxl-mtext">Support</span>
+                    </a>
+                </li>
+
+                <!-- Admins Management (Super Admin & HR Only) -->
+                @if(auth('admin')->user()->canManageAdmins())
+                <li class="nxl-item nxl-hasmenu {{ request()->routeIs('admin.admins.*') ? 'nxl-trigger' : '' }}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-shield"></i></span>
+                        <span class="nxl-mtext">Admins</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item">
+                            <a class="nxl-link {{ request()->routeIs('admin.admins.index') ? 'active' : '' }}" 
+                               href="{{ route('admin.admins.index') }}">All Admins</a>
+                        </li>
+                        <li class="nxl-item">
+                            <a class="nxl-link {{ request()->routeIs('admin.admins.create') ? 'active' : '' }}" 
+                               href="{{ route('admin.admins.create') }}">Add New Admin</a>
+                        </li>
+                    </ul>
+                </li>
+                @endif
+
+                <li class="nxl-item nxl-caption">
+                    <label>Account</label>
+                </li>
+
+                <!-- Settings -->
+                <li class="nxl-item nxl-hasmenu">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-settings"></i></span>
+                        <span class="nxl-mtext">Settings</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="#">Profile</a>
+                        </li>
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="#">Change Password</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Logout -->
+                <li class="nxl-item">
+                    <form method="POST" action="{{ route('admin.logout') }}">
+                        @csrf
+                        <button type="submit" class="nxl-link border-0 bg-transparent w-100 text-start">
+                            <span class="nxl-micon"><i class="feather-power text-danger"></i></span>
+                            <span class="nxl-mtext text-danger">Logout</span>
+                        </button>
+                    </form>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</nav>

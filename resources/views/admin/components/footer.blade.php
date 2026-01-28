@@ -3,18 +3,15 @@
                 <span>Copyright ©</span>
                 <script>document.write(new Date().getFullYear());</script>
             </p>
-    <!--         <div class="d-flex align-items-center gap-4">
+<!--             <div class="d-flex align-items-center gap-4">
                 <a href="javascript:void(0);" class="fs-11 fw-semibold text-uppercase">Help</a>
                 <a href="javascript:void(0);" class="fs-11 fw-semibold text-uppercase">Terms</a>
                 <a href="javascript:void(0);" class="fs-11 fw-semibold text-uppercase">Privacy</a>
-            </div>  -->
+            </div> -->
         </footer>
     </div>
 </main>
 
-
-<!-- JS Files -->
-    <!--! BEGIN: Vendors JS !-->
     <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
     <!-- vendors.min.js {always must need to be top} -->
     <script src="{{ asset('assets/vendors/js/daterangepicker.min.js') }}"></script>
@@ -30,7 +27,5 @@
     <!--! BEGIN: Theme Customizer !-->
     <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
     <!--! END: Theme Customizer !-->
-    
-    @stack('scripts')
 </body>
 </html>
