@@ -91,7 +91,7 @@ class CustomerController extends Controller
         // Total deposits
         $totalDeposits = Wallet::where('user_id', $customer->id)
             ->where('type', 'credit')
-            ->where('status', 'completed')
+            ->where('status', 'success')
             ->sum('amount');
         
         // Paginated orders (10 per page)

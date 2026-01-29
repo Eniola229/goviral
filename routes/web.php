@@ -12,7 +12,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::post('/webhook/fincra', [WalletController::class, 'webhook'])->name('wallet.webhook');
+Route::post('/wallet/webhook', [WalletController::class, 'webhook'])->name('wallet.webhook');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -34,10 +34,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/{order}/request-refill', [OrderController::class, 'requestRefill'])
         ->name('order.request-refill');
 
-    Route::get('/support', [SupportController::class, 'index'])->name('support.index');
-    Route::get('/support/{id}', [SupportController::class, 'show'])->name('support.show'); // View Chat
-    Route::post('/support', [SupportController::class, 'store'])->name('support.store');
-    Route::post('/support/reply/{id}', [SupportController::class, 'reply'])->name('support.reply');
+    // User Support Routes
+    Route::prefix('support')->name('support.')->group(function () {
+        Route::get('/', [SupportController::class, 'index'])->name('index');
+        Route::get('/create', [SupportController::class, 'create'])->name('create');
+        Route::post('/store', [SupportController::class, 'store'])->name('store');
+        Route::get('/{id}', [SupportController::class, 'show'])->name('show');
+        Route::post('/{id}/reply', [SupportController::class, 'reply'])->name('reply');
+        
+        // AJAX route for fetching messages
+        Route::get('/{id}/fetch-messages', [SupportController::class, 'fetchMessages'])->name('fetch-messages');
+    });
 
     // Profile & Settings
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');

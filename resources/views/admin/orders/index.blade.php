@@ -36,250 +36,216 @@
 
         <!-- Statistics Cards -->
         <div class="row mb-4">
-            <div class="col-md-4 col-lg-2">
-                <div class="card">
+            <div class="col-xxl-2 col-md-4 col-6">
+                <div class="card stretch stretch-full">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2 fs-11">Total Orders</h6>
-                        <h3 class="mb-0">{{ number_format($totalOrders) }}</h3>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="fw-bold mb-1">Total Orders</div>
+                                <div class="fs-4 fw-bold text-dark">{{ number_format($totalOrders) }}</div>
+                            </div>
+                            <div class="avatar-text avatar-lg bg-soft-primary text-primary">
+                                <i class="feather-shopping-cart"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 col-lg-2">
-                <div class="card">
+
+            <div class="col-xxl-2 col-md-4 col-6">
+                <div class="card stretch stretch-full">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2 fs-11">Pending</h6>
-                        <h3 class="mb-0 text-warning">{{ number_format($pendingOrders) }}</h3>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="fw-bold mb-1">Pending</div>
+                                <div class="fs-4 fw-bold text-warning">{{ number_format($pendingOrders) }}</div>
+                            </div>
+                            <div class="avatar-text avatar-lg bg-soft-warning text-warning">
+                                <i class="feather-clock"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 col-lg-2">
-                <div class="card">
+
+            <div class="col-xxl-2 col-md-4 col-6">
+                <div class="card stretch stretch-full">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2 fs-11">Processing</h6>
-                        <h3 class="mb-0 text-info">{{ number_format($processingOrders) }}</h3>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="fw-bold mb-1">Processing</div>
+                                <div class="fs-4 fw-bold text-info">{{ number_format($processingOrders) }}</div>
+                            </div>
+                            <div class="avatar-text avatar-lg bg-soft-info text-info">
+                                <i class="feather-loader"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 col-lg-2">
-                <div class="card">
+
+            <div class="col-xxl-2 col-md-4 col-6">
+                <div class="card stretch stretch-full">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2 fs-11">Completed</h6>
-                        <h3 class="mb-0 text-success">{{ number_format($completedOrders) }}</h3>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="fw-bold mb-1">Completed</div>
+                                <div class="fs-4 fw-bold text-success">{{ number_format($completedOrders) }}</div>
+                            </div>
+                            <div class="avatar-text avatar-lg bg-soft-success text-success">
+                                <i class="feather-check-circle"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 col-lg-2">
-                <div class="card">
+
+            <div class="col-xxl-2 col-md-4 col-6">
+                <div class="card stretch stretch-full">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2 fs-11">Cancelled</h6>
-                        <h3 class="mb-0 text-danger">{{ number_format($cancelledOrders) }}</h3>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="fw-bold mb-1">Cancelled</div>
+                                <div class="fs-4 fw-bold text-danger">{{ number_format($cancelledOrders) }}</div>
+                            </div>
+                            <div class="avatar-text avatar-lg bg-soft-danger text-danger">
+                                <i class="feather-x-circle"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 col-lg-2">
-                <div class="card">
+
+            <div class="col-xxl-2 col-md-4 col-6">
+                <div class="card stretch stretch-full">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2 fs-11">Total Revenue</h6>
-                        <h3 class="mb-0 text-primary">₦{{ number_format($totalRevenue, 0) }}</h3>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="fw-bold mb-1">Revenue</div>
+                                <div class="fs-4 fw-bold text-primary">₦{{ number_format($totalRevenue, 0) }}</div>
+                            </div>
+                            <div class="avatar-text avatar-lg bg-soft-primary text-primary">
+                                <i class="feather-dollar-sign"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card stretch stretch-full">
-                        <div class="card-header">
-                            <h5 class="card-title">All Orders</h5>
-                            <div class="card-header-action">
-                                <button type="button" class="btn btn-sm btn-light-brand" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
-                                    <i class="feather-filter me-2"></i> Filters
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Search and Filter Form -->
-                        <div class="collapse {{ request()->hasAny(['search', 'status', 'date_from', 'date_to', 'amount_min', 'amount_max']) ? 'show' : '' }}" id="filterCollapse">
-                            <div class="card-body border-bottom bg-light">
-                                <form method="GET" action="{{ route('admin.orders.index') }}" class="row g-3">
-                                    <div class="col-md-3">
-                                        <label class="form-label fs-11">Search</label>
-                                        <input type="text" 
-                                               name="search" 
-                                               class="form-control" 
-                                               placeholder="Order ID, Service, Customer..." 
-                                               value="{{ request('search') }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label fs-11">Status</label>
-                                        <select name="status" class="form-select">
-                                            <option value="">All Status</option>
-                                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Processing</option>
-                                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                                            <option value="partial" {{ request('status') == 'partial' ? 'selected' : '' }}>Partial</option>
-                                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label fs-11">From Date</label>
-                                        <input type="date" 
-                                               name="date_from" 
-                                               class="form-control" 
-                                               value="{{ request('date_from') }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label fs-11">To Date</label>
-                                        <input type="date" 
-                                               name="date_to" 
-                                               class="form-control" 
-                                               value="{{ request('date_to') }}">
-                                    </div>
-                                    <div class="col-md-1">
-                                        <label class="form-label fs-11">Min Amount</label>
-                                        <input type="number" 
-                                               name="amount_min" 
-                                               class="form-control" 
-                                               placeholder="0" 
-                                               value="{{ request('amount_min') }}">
-                                    </div>
-                                    <div class="col-md-1">
-                                        <label class="form-label fs-11">Max Amount</label>
-                                        <input type="number" 
-                                               name="amount_max" 
-                                               class="form-control" 
-                                               placeholder="∞" 
-                                               value="{{ request('amount_max') }}">
-                                    </div>
-                                    <div class="col-md-1 d-flex align-items-end">
-                                        <div class="d-flex gap-1 w-100">
-                                            <button type="submit" class="btn btn-primary btn-sm flex-fill">
-                                                <i class="feather-search"></i>
-                                            </button>
-                                            <a href="{{ route('admin.orders.index') }}" class="btn btn-light btn-sm">
-                                                <i class="feather-x"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
+        <!-- Orders Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">All Orders</h5>
+            </div>
 
-                        <!-- Orders Table -->
-                        <div class="card-body custom-card-action p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead>
-                                        <tr class="border-b">
-                                            <th>Order ID</th>
-                                            <th>Customer</th>
-                                            <th>Service</th>
-                                            <th>Quantity</th>
-                                            <th>Charge</th>
-                                            <th>Status</th>
-                                            <th>Date</th>
-                                            <th class="text-end">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($orders as $order)
-                                            <tr>
-                                                <td>
-                                                    <a href="{{ route('admin.orders.show', $order->id) }}" class="fw-bold text-primary">
-                                                        #{{ substr($order->id, 0, 8) }}
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <a href="{{ route('admin.customers.show', $order->user_id) }}" class="d-flex align-items-center">
-                                                        <div class="avatar-text avatar-sm bg-soft-primary text-primary me-2">
-                                                            {{ substr($order->user->name, 0, 2) }}
-                                                        </div>
-                                                        <span>{{ $order->user->name }}</span>
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <div class="text-truncate" style="max-width: 200px;" title="{{ $order->service_name }}">
-                                                        {{ $order->service_name }}
-                                                    </div>
-                                                </td>
-                                                <td>{{ number_format($order->quantity) }}</td>
-                                                <td>₦{{ number_format($order->charge, 2) }}</td>
-                                                <td>
-                                                    @if($order->status == 'completed')
-                                                        <span class="badge bg-soft-success text-success">
-                                                            <i class="feather-check-circle me-1"></i> Completed
-                                                        </span>
-                                                    @elseif($order->status == 'processing')
-                                                        <span class="badge bg-soft-info text-info">
-                                                            <i class="feather-loader me-1"></i> Processing
-                                                        </span>
-                                                    @elseif($order->status == 'pending')
-                                                        <span class="badge bg-soft-warning text-warning">
-                                                            <i class="feather-clock me-1"></i> Pending
-                                                        </span>
-                                                    @elseif($order->status == 'partial')
-                                                        <span class="badge bg-soft-primary text-primary">
-                                                            <i class="feather-pie-chart me-1"></i> Partial
-                                                        </span>
-                                                    @else
-                                                        <span class="badge bg-soft-danger text-danger">
-                                                            <i class="feather-x-circle me-1"></i> Cancelled
-                                                        </span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    <div>{{ $order->created_at->format('M d, Y') }}</div>
-                                                    <span class="fs-11 text-muted">{{ $order->created_at->format('H:i') }}</span>
-                                                </td>
-                                                <td class="text-end">
-                                                    <a href="{{ route('admin.orders.show', $order->id) }}" 
-                                                       class="btn btn-sm btn-light-brand">
-                                                        <i class="feather-eye"></i> View
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="8" class="text-center py-5">
-                                                    <div class="mb-3">
-                                                        <i class="feather-shopping-cart fs-1 text-muted"></i>
-                                                    </div>
-                                                    <h6 class="text-muted">No orders found</h6>
-                                                    @if(request()->hasAny(['search', 'status', 'date_from', 'date_to', 'amount_min', 'amount_max']))
-                                                        <p class="text-muted mb-0">Try adjusting your filters</p>
-                                                        <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-primary mt-3">
-                                                            Clear Filters
-                                                        </a>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Pagination -->
-                        @if($orders->hasPages())
-                        <div class="card-footer">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <p class="text-muted mb-0 fs-12">
-                                        Showing {{ $orders->firstItem() }} to {{ $orders->lastItem() }} of {{ number_format($orders->total()) }} orders
-                                    </p>
-                                </div>
-                                <div>
-                                    {{ $orders->links() }}
-                                </div>
-                            </div>
-                        </div>
-                        @endif
-
+            <!-- Filters -->
+            <div class="card-body border-bottom">
+                <form method="GET" action="{{ route('admin.orders.index') }}" class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" name="search" class="form-control" placeholder="Search orders..." value="{{ request('search') }}">
                     </div>
+                    <div class="col-md-2">
+                        <select name="status" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Processing</option>
+                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="partial" {{ request('status') == 'partial' ? 'selected' : '' }}>Partial</option>
+                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="date" name="date_from" class="form-control" placeholder="From" value="{{ request('date_from') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="date" name="date_to" class="form-control" placeholder="To" value="{{ request('date_to') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="feather-filter me-2"></i> Filter
+                            </button>
+                            <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary">
+                                <i class="feather-x me-2"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr class="border-b">
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Service</th>
+                                <th>Quantity</th>
+                                <th>Charge</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($orders as $orderItem)
+                                <tr>
+                                    <td>
+                                        <code class="fs-11">#{{ substr($orderItem->id, 0, 8) }}</code>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('admin.customers.show', $orderItem->user_id) }}" class="text-dark">
+                                            {{ $orderItem->user->name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ $orderItem->service_name }}">
+                                            {{ $orderItem->service_name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ number_format($orderItem->quantity) }}</td>
+                                    <td class="text-success fw-bold">₦{{ number_format($orderItem->charge, 2) }}</td>
+                                    <td>
+                                        @if($orderItem->status == 'completed')
+                                            <span class="badge bg-soft-success text-success">Completed</span>
+                                        @elseif($orderItem->status == 'processing')
+                                            <span class="badge bg-soft-info text-info">Processing</span>
+                                        @elseif($orderItem->status == 'pending')
+                                            <span class="badge bg-soft-warning text-warning">Pending</span>
+                                        @elseif($orderItem->status == 'partial')
+                                            <span class="badge bg-soft-primary text-primary">Partial</span>
+                                        @else
+                                            <span class="badge bg-soft-danger text-danger">Cancelled</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $orderItem->created_at->format('M d, Y') }}</td>
+                                    <td class="text-end">
+                                        <a href="{{ route('admin.orders.show', $orderItem->id) }}" class="btn btn-sm btn-light-brand">
+                                            <i class="feather-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">
+                                        <i class="feather-inbox fs-3 d-block mb-2"></i>
+                                        No orders found
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
+
+            <!-- Pagination -->
+            @if($orders->hasPages())
+            <div class="card-footer">
+                {{ $orders->links() }}
+            </div>
+            @endif
         </div>
 
     </div>

@@ -13,19 +13,119 @@ class WalletController extends Controller
     use LogsAdminActivity;
 
     /**
-     * Display all wallet transactions (Coming in Step 8)
+     * Display all wallet transactions with filters and pagination
      */
     public function index(Request $request)
     {
-        return 'Wallet Transactions Index - Coming in Step 8';
+        $query = Wallet::with('user');
+
+        // Search
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('reference', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter by type
+        if ($request->has('type') && $request->type) {
+            $query->where('type', $request->type);
+        }
+
+        // Filter by status
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by payment method
+        if ($request->has('payment_method') && $request->payment_method) {
+            $query->where('payment_method', $request->payment_method);
+        }
+
+        // Filter by date range
+        if ($request->has('date_from') && $request->date_from) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->has('date_to') && $request->date_to) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Filter by amount range
+        if ($request->has('amount_min') && $request->amount_min) {
+            $query->where('amount', '>=', $request->amount_min);
+        }
+        if ($request->has('amount_max') && $request->amount_max) {
+            $query->where('amount', '<=', $request->amount_max);
+        }
+
+        // Pagination
+        $transactions = $query->latest()->paginate(20)->withQueryString();
+
+        // Statistics
+        $totalTransactions = Wallet::count();
+        $totalDeposits = Wallet::where('type', 'credit')->where('status', 'success')->count();
+        $totalDebits = Wallet::where('type', 'debit')->count();
+        $pendingDeposits = Wallet::where('type', 'credit')->where('status', 'pending')->count();
+        $pendingAmount = Wallet::where('type', 'credit')->where('status', 'pending')->sum('amount');
+        $completedAmount = Wallet::where('type', 'credit')->where('status', 'success')->sum('amount');
+
+        // Log the view
+        $this->logActivity(
+            'viewed',
+            auth('admin')->user()->name . ' viewed wallet transactions list',
+            'Wallet',
+            null
+        );
+
+        return view('admin.wallet.index', compact(
+            'transactions',
+            'totalTransactions',
+            'totalDeposits',
+            'totalDebits',
+            'pendingDeposits',
+            'pendingAmount',
+            'completedAmount'
+        ));
     }
 
     /**
-     * Show single transaction (Coming in Step 8)
+     * Show single transaction details
      */
     public function show($id)
     {
-        return 'Transaction Details - Coming in Step 8';
+        $transaction = Wallet::with('user')->findOrFail($id);
+        
+        // Get logs related to this transaction
+        $logs = Logged::where('user_id', $transaction->user_id)
+            ->where(function($q) use ($transaction) {
+                $q->where('reference', $transaction->reference)
+                  ->orWhere('description', 'like', "%{$transaction->reference}%");
+            })
+            ->latest()
+            ->paginate(10);
+
+        // Get customer's current balance
+        $latestWallet = Wallet::where('user_id', $transaction->user_id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        $customerBalance = $latestWallet ? $latestWallet->balance_after : 0;
+
+        // Get customer's transaction history count
+        $totalTransactions = Wallet::where('user_id', $transaction->user_id)->count();
+
+        // Log the view
+        $this->logViewed(
+            'Wallet',
+            $transaction->id,
+            auth('admin')->user()->name . ' viewed transaction ' . $transaction->reference
+        );
+
+        return view('admin.wallet.show', compact('transaction', 'logs', 'customerBalance', 'totalTransactions'));
     }
 
     /**
@@ -66,7 +166,7 @@ class WalletController extends Controller
             'type' => 'wallet',
             'method' => 'manual_approval',
             'amount' => $transaction->amount,
-            'status' => 'completed',
+            'status' => 'success',
             'description' => "Transaction {$transaction->reference} approved by admin: " . auth('admin')->user()->name,
             'ip_address' => $request->ip(),
         ]);
@@ -100,7 +200,7 @@ class WalletController extends Controller
             // Update transaction status
             $transaction->update([
                 'status' => 'failed',
-                'description' => $transaction->description . ' (Rejected: ' . $reason . ')'
+                'description' => $transaction->description . ' (Rejected by admin: ' . $reason . ')'
             ]);
 
             // Reverse the balance
@@ -110,10 +210,10 @@ class WalletController extends Controller
                 'amount' => $transaction->amount,
                 'balance_after' => $transaction->balance_before,
                 'type' => 'debit',
-                'description' => "Reversal of rejected transaction: " . $transaction->reference,
+                'description' => "Reversal of rejected transaction: " . $transaction->reference . " - Reason: " . $reason,
                 'reference' => 'REV-' . $transaction->reference,
                 'payment_method' => 'reversal',
-                'status' => 'completed',
+                'status' => 'success',
             ]);
         } else {
             $transaction->update(['status' => 'failed']);
@@ -146,7 +246,7 @@ class WalletController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
-        return back()->with('success', 'Transaction rejected successfully');
+        return back()->with('success', 'Transaction rejected successfully. Balance has been reversed.');
     }
 
     /**

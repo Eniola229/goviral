@@ -58,7 +58,7 @@
                                         <input type="number" name="amount" class="form-control form-control-lg" placeholder="e.g. 5000" min="100" required>
                                     </div>
                                     <div class="d-grid">
-                                        <button type="submit" class="btn btn-primary btn-lg">Proceed to Pay (Fincra)</button>
+                                        <button type="submit" class="btn btn-primary btn-lg">Proceed to Pay</button>
                                     </div>
                                 </form>
                             </div>
@@ -88,7 +88,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @forelse(auth()->user()->wallet()->latest()->get() as $log)
+                                            @forelse(auth()->user()->wallet()->latest()->paginate(10) as $log)
                                                 <tr>
                                                     <td>{{ $log->created_at->format('M d, Y') }}</td>
                                                     <td><code>{{ $log->reference }}</code></td>
@@ -113,6 +113,9 @@
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                            <div class="card-footer">
+                                {{ auth()->user()->wallet()->latest()->paginate(10)->links() }}
                             </div>
                         </div>
                     </div>

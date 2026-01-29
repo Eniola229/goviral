@@ -13,8 +13,16 @@ class OrderController extends Controller
 {
     use LogsAdminActivity;
 
+    protected $ogaviralService;
+
+    // Add this constructor
+    public function __construct()
+    {
+        $this->ogaviralService = app(\App\Services\OgaviralService::class);
+    }
+
     /**
-     * Display all orders with filters and pagination
+     * Display all orders with AUTO STATUS UPDATE
      */
     public function index(Request $request)
     {
@@ -59,6 +67,9 @@ class OrderController extends Controller
         // Pagination
         $orders = $query->latest()->paginate(20)->withQueryString();
 
+        // AUTO-UPDATE ORDER STATUSES
+        $this->autoUpdateOrderStatuses($orders);
+
         // Statistics
         $totalOrders = Order::count();
         $pendingOrders = Order::where('status', 'pending')->count();
@@ -87,11 +98,17 @@ class OrderController extends Controller
     }
 
     /**
-     * Show single order details
+     * Show single order with AUTO STATUS UPDATE
      */
     public function show($id)
     {
         $order = Order::with('user')->findOrFail($id);
+        
+        // AUTO-UPDATE THIS ORDER'S STATUS
+        $this->autoUpdateSingleOrder($order);
+        
+        // Refresh order data after update
+        $order->refresh();
         
         // Get logs related to this order
         $logs = Logged::where('user_id', $order->user_id)
@@ -118,6 +135,197 @@ class OrderController extends Controller
         return view('admin.orders.show', compact('order', 'logs', 'customerBalance'));
     }
 
+    /**
+     * Manual status check (triggered by button click)
+     */
+    public function checkStatus($id)
+    {
+        $order = Order::with('user')->findOrFail($id);
+
+        if (!$order->api_order_id) {
+            return back()->with('error', 'No API order ID found for this order.');
+        }
+
+        try {
+            $status = $this->ogaviralService->getOrderStatus($order->api_order_id);
+
+            if (isset($status['status'])) {
+                $oldStatus = $order->status;
+                $apiStatus = $status['status'];
+                $newStatus = $this->mapApiStatus($apiStatus);
+
+                // Update order
+                $order->update([
+                    'status' => $newStatus,
+                    'api_response' => json_encode($status),
+                ]);
+
+                // Log in admin logs
+                $this->logUpdated(
+                    'Order',
+                    $order->id,
+                    auth('admin')->user()->name . ' manually checked status for Order #' . substr($order->id, 0, 8) . ' - Updated from ' . $oldStatus . ' to ' . $newStatus,
+                    [
+                        'status' => [
+                            'old' => $oldStatus,
+                            'new' => $newStatus
+                        ],
+                        'api_status' => $apiStatus
+                    ]
+                );
+
+                // Log in customer logs
+                Logged::create([
+                    'user_id' => $order->user_id,
+                    'reference' => $order->id,
+                    'type' => 'order',
+                    'method' => 'manual_status_check',
+                    'amount' => $order->charge,
+                    'status' => 'success',
+                    'description' => "Order #" . substr($order->id, 0, 8) . " status manually checked by admin: " . auth('admin')->user()->name . " - Status: {$newStatus}",
+                    'ip_address' => request()->ip(),
+                ]);
+
+                return back()->with('success', 'Order status updated successfully: ' . ucfirst($newStatus));
+            }
+
+            return back()->with('error', 'Failed to fetch order status from API.');
+
+        } catch (\Exception $e) {
+            \Log::error('Manual status check failed for order ' . $order->id . ': ' . $e->getMessage());
+            
+            return back()->with('error', 'Failed to check order status: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Auto-update order statuses (multiple orders)
+     */
+    protected function autoUpdateOrderStatuses($orders)
+    {
+        foreach ($orders as $order) {
+            if (in_array($order->status, ['pending', 'processing']) && $order->api_order_id) {
+                try {
+                    $status = $this->ogaviralService->getOrderStatus($order->api_order_id);
+                    
+                    if (isset($status['status'])) {
+                        $apiStatus = $status['status'];
+                        $newStatus = $this->mapApiStatus($apiStatus);
+                        
+                        if ($order->status !== $newStatus) {
+                            $oldStatus = $order->status;
+                            
+                            $order->update([
+                                'status' => $newStatus,
+                                'api_response' => json_encode($status),
+                            ]);
+                            
+                            // Log auto-update in admin logs
+                            $this->logActivity(
+                                'auto_status_update',
+                                'System auto-updated Order #' . substr($order->id, 0, 8) . ' from ' . $oldStatus . ' to ' . $newStatus,
+                                'Order',
+                                $order->id,
+                                [
+                                    'status' => [
+                                        'old' => $oldStatus,
+                                        'new' => $newStatus
+                                    ],
+                                    'api_order_id' => $order->api_order_id
+                                ]
+                            );
+
+                            // Log in customer logs
+                            Logged::create([
+                                'user_id' => $order->user_id,
+                                'reference' => $order->id,
+                                'type' => 'order',
+                                'method' => 'auto_status_update',
+                                'amount' => $order->charge,
+                                'status' => 'completed',
+                                'description' => "Order #" . substr($order->id, 0, 8) . " status auto-updated from {$oldStatus} to {$newStatus}",
+                                'ip_address' => request()->ip(),
+                            ]);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Auto status update failed for order ' . $order->id . ': ' . $e->getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Auto-update single order status
+     */
+    protected function autoUpdateSingleOrder($order)
+    {
+        if (in_array($order->status, ['pending', 'processing']) && $order->api_order_id) {
+            try {
+                $status = $this->ogaviralService->getOrderStatus($order->api_order_id);
+                
+                if (isset($status['status'])) {
+                    $apiStatus = $status['status'];
+                    $newStatus = $this->mapApiStatus($apiStatus);
+                    
+                    if ($order->status !== $newStatus) {
+                        $oldStatus = $order->status;
+                        
+                        $order->update([
+                            'status' => $newStatus,
+                            'api_response' => json_encode($status),
+                        ]);
+                        
+                        // Log auto-update
+                        $this->logActivity(
+                            'auto_status_update',
+                            'System auto-updated Order #' . substr($order->id, 0, 8) . ' from ' . $oldStatus . ' to ' . $newStatus,
+                            'Order',
+                            $order->id,
+                            [
+                                'status' => [
+                                    'old' => $oldStatus,
+                                    'new' => $newStatus
+                                ]
+                            ]
+                        );
+
+                        // Log in customer logs
+                        Logged::create([
+                            'user_id' => $order->user_id,
+                            'reference' => $order->id,
+                            'type' => 'order',
+                            'method' => 'auto_status_update',
+                            'amount' => $order->charge,
+                            'status' => 'completed',
+                            'description' => "Order #" . substr($order->id, 0, 8) . " status auto-updated from {$oldStatus} to {$newStatus}",
+                            'ip_address' => request()->ip(),
+                        ]);
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Auto status update failed for order ' . $order->id . ': ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Map API status to database status
+     */
+    protected function mapApiStatus($apiStatus)
+    {
+        $statusMap = [
+            'Pending' => 'pending',
+            'In progress' => 'processing',
+            'Processing' => 'processing',
+            'Completed' => 'completed',
+            'Partial' => 'partial',
+            'Cancelled' => 'cancelled',
+            'Canceled' => 'cancelled',
+        ];
+        
+        return $statusMap[$apiStatus] ?? strtolower($apiStatus);
+    }
     /**
      * Update order status (Super Admin & Accountant only)
      */
@@ -156,7 +364,7 @@ class OrderController extends Controller
             'type' => 'order',
             'method' => 'status_update',
             'amount' => $order->charge,
-            'status' => 'completed',
+            'status' => 'success',
             'description' => "Order #" . substr($order->id, 0, 8) . " status changed from {$oldStatus} to {$request->status} by admin: " . auth('admin')->user()->name,
             'ip_address' => $request->ip(),
         ]);
@@ -224,7 +432,7 @@ class OrderController extends Controller
             'type' => 'wallet',
             'method' => 'refund',
             'amount' => $order->charge,
-            'status' => 'completed',
+            'status' => 'success',
             'description' => "Refund processed for Order #" . substr($order->id, 0, 8) . " by admin: " . auth('admin')->user()->name,
             'ip_address' => $request->ip(),
         ]);

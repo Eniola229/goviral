@@ -120,6 +120,16 @@ class Admin extends Authenticatable
         return $this->status === 'active';
     }
 
+    public function canManageSupport(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAccountant() || isSupport() || isHR() || isAdmin() || isManager();
+    }
+
+    public function canViewSupport(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAccountant() || isSupport() || isHR() || isAdmin() || isManager();
+    }
+
     public function logs()
     {
         return $this->hasMany(AdminLogged::class);

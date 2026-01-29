@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class WalletService
 {
     // Deposit Money
-    public static function deposit(User $user, $amount, $reference, $paymentMethod = 'Fincra', $description = 'Wallet Top Up')
+    public static function deposit(User $user, $amount, $reference, $paymentMethod = 'Korapay', $description = 'Wallet Top Up')
     {
         return DB::transaction(function () use ($user, $amount, $reference, $paymentMethod, $description) {
             

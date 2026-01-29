@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\FincraService;
+use App\Services\KorapayService;
 use App\Services\WalletService;
 use App\Models\Wallet;
+use App\Models\Logged;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class WalletController extends Controller
 {
-    protected $fincraService;
+    protected $korapayService;
 
-    public function __construct(FincraService $fincraService)
+    public function __construct(KorapayService $korapayService)
     {
-        $this->fincraService = $fincraService;
+        $this->korapayService = $korapayService;
     }
 
     public function index()
@@ -31,14 +32,28 @@ class WalletController extends Controller
 
         $amount = $request->amount;
         $user = Auth::user();
-        $redirectUrl = route('wallet.callback'); 
+        
+        // Ensure absolute URL - Korapay requires this
+        $redirectUrl = route('wallet.callback', [], true);
+        
+        Log::info('Initiating Korapay payment', [
+            'amount' => $amount,
+            'user_id' => $user->id,
+            'redirect_url' => $redirectUrl
+        ]);
 
-        // Initialize Fincra Transaction
-        $result = $this->fincraService->initializeTransaction($amount, $user, $redirectUrl);
+        // Initialize Korapay Transaction
+        // This will create a Logged entry with status = 'pending'
+        $result = $this->korapayService->initializeTransaction($amount, $user, $redirectUrl);
 
         if ($result['success']) {
             // Store the reference in session to verify later
             session(['pending_payment_reference' => $result['reference']]);
+            
+            Log::info('Korapay checkout URL generated', [
+                'reference' => $result['reference'],
+                'checkout_url' => $result['data']['checkout_url']
+            ]);
             
             return redirect()->away($result['data']['checkout_url']);
         }
@@ -53,14 +68,13 @@ class WalletController extends Controller
     {
         $user = Auth::user();
         
-        // FIX 1: Get reference from the correct source
-        // Fincra may send it as 'reference', 'merchantReference', or in the session
+        // Get reference from the correct source
+        // Korapay sends it as 'reference' in the query params
         $reference = $request->query('reference') 
-                  ?? $request->query('merchantReference') 
                   ?? session('pending_payment_reference');
 
         if (!$reference) {
-            Log::error('Fincra Callback: No reference found', [
+            Log::error('Korapay Callback: No reference found', [
                 'query_params' => $request->all(),
                 'session_ref' => session('pending_payment_reference')
             ]);
@@ -71,39 +85,73 @@ class WalletController extends Controller
             ]);
         }
 
-        Log::info('Fincra Callback received', [
+        Log::info('Korapay Callback received', [
             'reference' => $reference,
             'all_params' => $request->all()
         ]);
 
-        // FIX 2: Check if already processed BEFORE verifying with Fincra
-        $existing = Wallet::where('reference', $reference)->first();
-        if ($existing) {
-            Log::info('Fincra: Transaction already processed', ['reference' => $reference]);
+        // Check if already processed by checking the Logged table status
+        $loggedEntry = Logged::where('reference', $reference)->first();
+        
+        if (!$loggedEntry) {
+            Log::error('Korapay: No logged entry found', ['reference' => $reference]);
             
             return redirect()->route('wallet.index')->with('alert', [
-                'type' => 'info',
-                'message' => 'This transaction has already been processed.'
+                'type' => 'error',
+                'message' => 'Transaction record not found.'
             ]);
         }
 
-        // FIX 3: Verify with Fincra
-        $result = $this->fincraService->verifyTransaction($reference);
+        // If the logged entry status is already 'success', it means we've processed it
+        if ($loggedEntry->status === 'success') {
+            // Check if wallet was already credited
+            $walletEntry = Wallet::where('reference', $reference)->first();
+            
+            if ($walletEntry) {
+                Log::info('Korapay: Transaction already processed and wallet credited', [
+                    'reference' => $reference
+                ]);
+                
+                return redirect()->route('wallet.index')->with('alert', [
+                    'type' => 'success',
+                    'message' => 'Payment already processed. Wallet balance: ₦' . number_format($user->balance, 2)
+                ]);
+            }
+        }
+
+        // Verify with Korapay
+        $result = $this->korapayService->verifyTransaction($reference);
 
         if ($result['success']) {
-            // Credit the Wallet
+            // Check one more time before crediting (race condition protection)
+            $walletEntry = Wallet::where('reference', $reference)->first();
+            
+            if ($walletEntry) {
+                Log::info('Korapay: Wallet already credited (race condition check)', [
+                    'reference' => $reference
+                ]);
+                
+                session()->forget('pending_payment_reference');
+                
+                return redirect()->route('wallet.index')->with('alert', [
+                    'type' => 'success',
+                    'message' => 'Payment successful. Current balance: ₦' . number_format($user->wallet_balance, 2)
+                ]);
+            }
+
+            // Credit the Wallet with the ORIGINAL amount (not amount_paid with fees)
             WalletService::deposit(
                 $user, 
-                $result['amount'], 
+                $result['amount'], // This is now the original amount from Logged table
                 $reference, 
-                'Fincra', 
-                "Top-up via Fincra (Ref: {$reference})"
+                'Korapay', 
+                "Top-up via Korapay (Ref: {$reference})"
             );
 
             // Clear the session
             session()->forget('pending_payment_reference');
 
-            Log::info('Fincra: Payment successful and wallet credited', [
+            Log::info('Korapay: Payment successful and wallet credited', [
                 'reference' => $reference,
                 'amount' => $result['amount']
             ]);
@@ -114,64 +162,104 @@ class WalletController extends Controller
             ]);
         }
 
-        Log::warning('Fincra: Payment verification failed', [
+        Log::warning('Korapay: Payment verification failed', [
             'reference' => $reference,
             'result' => $result
         ]);
 
         return redirect()->route('wallet.index')->with('alert', [
             'type' => 'error',
-            'message' => 'Payment verification failed. Please contact support if your account was debited.'
+            'message' => $result['message'] ?? 'Payment verification failed. Please contact support if your account was debited.'
         ]);
     }
 
     /**
-     * Optional: Webhook handler for asynchronous payment notifications
-     * This is the RECOMMENDED approach for production
+     * Webhook handler for asynchronous payment notifications
      */
     public function webhook(Request $request)
     {
-        Log::info('Fincra Webhook received', $request->all());
+        Log::info('Korapay Webhook received', $request->all());
 
-        // Verify webhook signature (implement this based on Fincra docs)
-        // $signature = $request->header('X-Fincra-Signature');
-        // if (!$this->verifyWebhookSignature($request->getContent(), $signature)) {
-        //     return response()->json(['error' => 'Invalid signature'], 401);
-        // }
+        // Verify webhook signature
+        $signature = $request->header('x-korapay-signature');
+        if (!$signature || !$this->korapayService->verifyWebhookSignature($request->all(), $signature)) {
+            Log::error('Korapay Webhook: Invalid signature');
+            return response()->json(['error' => 'Invalid signature'], 401);
+        }
 
         $data = $request->all();
-        $reference = $data['merchantReference'] ?? null;
-        $status = $data['status'] ?? null;
+        $event = $data['event'] ?? null;
+        $paymentData = $data['data'] ?? [];
+        
+        // We only process successful charges
+        if ($event !== 'charge.success') {
+            Log::info('Korapay Webhook: Non-success event received', ['event' => $event]);
+            return response()->json(['message' => 'Event acknowledged'], 200);
+        }
 
-        if (!$reference || strtolower($status) !== 'success') {
+        $reference = $paymentData['payment_reference'] ?? null; // Korapay uses payment_reference for merchant reference
+        $status = strtolower($paymentData['status'] ?? '');
+
+        if (!$reference || $status !== 'success') {
+            Log::error('Korapay Webhook: Invalid data', [
+                'reference' => $reference,
+                'status' => $status
+            ]);
             return response()->json(['error' => 'Invalid webhook data'], 400);
         }
 
+        // Find the logged entry
+        $loggedEntry = Logged::where('reference', $reference)->first();
+        if (!$loggedEntry) {
+            Log::error('Korapay Webhook: Log entry not found', ['reference' => $reference]);
+            return response()->json(['error' => 'Transaction not found'], 404);
+        }
+
         // Check if already processed
-        $existing = Wallet::where('reference', $reference)->first();
-        if ($existing) {
-            return response()->json(['message' => 'Already processed'], 200);
+        if ($loggedEntry->status === 'success') {
+            $walletEntry = Wallet::where('reference', $reference)->first();
+            if ($walletEntry) {
+                Log::info('Korapay Webhook: Already processed', ['reference' => $reference]);
+                return response()->json(['message' => 'Already processed'], 200);
+            }
         }
 
-        // Find user from metadata
-        $userId = $data['metadata']['user_id'] ?? null;
-        if (!$userId) {
-            return response()->json(['error' => 'User not found'], 400);
-        }
-
-        $user = \App\Models\User::find($userId);
+        $user = \App\Models\User::find($loggedEntry->user_id);
         if (!$user) {
+            Log::error('Korapay Webhook: User not found', ['user_id' => $loggedEntry->user_id]);
             return response()->json(['error' => 'User not found'], 404);
         }
 
-        // Credit wallet
+        // Check if wallet already credited (race condition protection)
+        $walletEntry = Wallet::where('reference', $reference)->first();
+        if ($walletEntry) {
+            Log::info('Korapay Webhook: Wallet already credited', ['reference' => $reference]);
+            return response()->json(['message' => 'Already processed'], 200);
+        }
+
+        // Credit wallet with ORIGINAL amount from Logged table
         WalletService::deposit(
             $user,
-            $data['amount'],
+            $loggedEntry->amount, 
             $reference,
-            'Fincra',
-            "Top-up via Fincra Webhook (Ref: {$reference})"
+            'Korapay',
+            "Top-up via Korapay Webhook (Ref: {$reference})"
         );
+
+        // Update log entry
+        $loggedEntry->update([
+            'status' => 'success',
+            'response_data' => array_merge(
+                $loggedEntry->response_data ?? [],
+                ['webhook' => $paymentData]
+            ),
+        ]);
+
+        Log::info('Korapay Webhook: Payment processed successfully', [
+            'reference' => $reference,
+            'amount' => $loggedEntry->amount,
+            'user_id' => $user->id
+        ]);
 
         return response()->json(['message' => 'Webhook processed'], 200);
     }
