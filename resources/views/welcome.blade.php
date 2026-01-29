@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!--! BEGIN: Favicon-->
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/b.png') }}" />
     <style>
@@ -842,6 +842,7 @@
                 <h3>{{ config('app.name', 'ViralBoost') }}</h3>
                 <p style="color: var(--gray); margin-bottom: 1.5rem;">Your trusted partner for social media growth. Safe, fast, and reliable.</p>
                 <div class="social-links">
+                	<a href="https://whatsapp.com/channel/0029Vb7I1e3JuyAL31rIia0r" class="social-icon" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="Facebook"><i class="fab fa-facebook-f"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="Twitter/X"><i class="fab fa-twitter"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
@@ -849,9 +850,9 @@
                     <a href="#" class="social-icon" target="_blank" title="TikTok"><i class="fab fa-tiktok"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="YouTube"><i class="fab fa-youtube"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a> -->
-                    <a href="https://wa.me/2349152880128" class="social-icon" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <!--     
                     <a href="#" class="social-icon" target="_blank" title="Reddit"><i class="fab fa-reddit-alien"></i></a>
-                    <a href="#" class="social-icon" target="_blank" title="Discord"><i class="fab fa-discord"></i></a>
+                    <a href="#" class="social-icon" target="_blank" title="Discord"><i class="fab fa-discord"></i></a> -->
                 </div>
             </div>
 
