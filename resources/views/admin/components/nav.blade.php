@@ -81,7 +81,7 @@
                 </li>
 
                 <!-- Settings -->
-                <li class="nxl-item nxl-hasmenu">
+                <li class="nxl-item nxl-hasmenu {{ request()->routeIs('admin.profile.*') ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-settings"></i></span>
                         <span class="nxl-mtext">Settings</span>
@@ -89,14 +89,12 @@
                     </a>
                     <ul class="nxl-submenu">
                         <li class="nxl-item">
-                            <a class="nxl-link" href="#">Profile</a>
-                        </li>
-                        <li class="nxl-item">
-                            <a class="nxl-link" href="#">Change Password</a>
+                            <a href="{{ route('admin.profile.show') }}" class="nxl-link {{ request()->routeIs('admin.profile.show') ? 'active' : '' }}">
+                                My Profile
+                            </a>
                         </li>
                     </ul>
                 </li>
-
                 <!-- Logout -->
                 <li class="nxl-item">
                     <form method="POST" action="{{ route('admin.logout') }}">

@@ -7,6 +7,9 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Admin\SupportController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\ProfileController;
+
 
 Route::prefix('admin')->name('admin.')->group(function () {
     
@@ -75,8 +78,28 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // AJAX route for fetching messages
             Route::get('/{id}/fetch-messages', [SupportController::class, 'fetchMessages'])->name('fetch-messages');
         });
-        Route::get('/admins', function() { return 'Admins - Coming soon'; })->name('admins.index');
-        Route::get('/admins/create', function() { return 'Add Admin - Coming soon'; })->name('admins.create');
+        // Admins Management (Super Admin & HR Only)
+        Route::prefix('admins')->name('admins.')->group(function () {
+            Route::get('/', [AdminController::class, 'index'])->name('index');
+            Route::get('/create', [AdminController::class, 'create'])->name('create');
+            Route::post('/', [AdminController::class, 'store'])->name('store');
+            Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
+            Route::get('/{id}', [AdminController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [AdminController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [AdminController::class, 'update'])->name('update');
+            Route::delete('/{id}', [AdminController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('profile')->name('profile.')->group(function () {
+            // View profile
+            Route::get('/', [ProfileController::class, 'show'])->name('show');
+            
+            // Update profile information
+            Route::put('/update', [ProfileController::class, 'update'])->name('update');
+            
+            // Update password
+            Route::put('/update-password', [ProfileController::class, 'updatePassword'])->name('update-password');
+        });
         
     });
 });

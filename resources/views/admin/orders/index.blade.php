@@ -35,7 +35,7 @@
         @endif
 
         <!-- Statistics Cards -->
-        <div class="row mb-4">
+        <div class="row mb-4 mt-4">
             <div class="col-xxl-2 col-md-4 col-6">
                 <div class="card stretch stretch-full">
                     <div class="card-body">
