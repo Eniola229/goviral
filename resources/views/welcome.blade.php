@@ -8,6 +8,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!--! BEGIN: Favicon-->
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/b.png') }}" />
     <style>
         * {
             margin: 0;
@@ -561,8 +564,8 @@
         <div class="logo">{{ config('app.name', 'ViralBoost') }}</div>
         <ul class="nav-links">
             <li><a href="#features">Features</a></li>
-            <li><a href="#services">Services</a></li>
-            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#services">Services</a></li><!-- 
+            <li><a href="#pricing">Pricing</a></li> -->
             <li><a href="#contact">Contact</a></li>
         </ul>
         <div class="nav-buttons">
@@ -833,7 +836,7 @@
     </section>
 
     <!-- Footer -->
-    <footer>
+    <footer id="contact">
         <div class="footer-content">
             <div class="footer-section">
                 <h3>{{ config('app.name', 'ViralBoost') }}</h3>

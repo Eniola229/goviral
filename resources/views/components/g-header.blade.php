@@ -11,11 +11,11 @@
     <!--! The above 6 meta tags *must* come first in the head; any other head content must come *after* these tags !-->
     
     <!--! BEGIN: Apps Title-->
-    <title>{{ config('app.name', 'Booster') }} || @yield('title', 'Grow your social media with ease')</title>
+    <title>{{ config('app.name', 'Booster') }} || @yield('title', 'Premium Social Media Growth Services')</title>
     <!--! END:  Apps Title-->
     
     <!--! BEGIN: Favicon-->
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/b.png') }}" />
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/B.png') }}" />
     <!--! END: Favicon-->
     
     <!--! BEGIN: Bootstrap CSS-->
