@@ -10,7 +10,20 @@ use App\Http\Controllers\SupportController;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('welcome');
+
+// Legal & Info Pages
+Route::get('/refund-policy', function () {
+    return view('legal.refund-policy');
+})->name('refund-policy');
+
+Route::get('/terms-of-use', function () {
+    return view('legal.terms-of-use');
+})->name('terms-of-use');
+
+Route::get('/faq', function () {
+    return view('legal.faq');
+})->name('faq');
 
 Route::post('/wallet/webhook', [WalletController::class, 'webhook'])->name('wallet.webhook');
 

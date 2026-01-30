@@ -864,7 +864,7 @@
                 <p style="color: var(--gray); margin-bottom: 1.5rem;">Your trusted partner for social media growth. Safe, fast, and reliable.</p>
                 <div class="social-links">
                     <a href="https://whatsapp.com/channel/0029Vb7I1e3JuyAL31rIia0r" class="social-icon" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                    <a href="#" class="social-icon" target="_blank" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.tiktok.com/@booster3928?is_from_webapp=1&sender_device=pc" class="social-icon" target="_blank" title="Facebook"><i class="fab fa-tiktok"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="Twitter/X"><i class="fab fa-twitter"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
                 </div>
@@ -883,10 +883,9 @@
             <div class="footer-section">
                 <h3>Support</h3>
                 <ul>
-                    <li><a href="#">Help Center</a></li>
-                    <li><a href="#">Contact Us</a></li>
-                    <li><a href="#">FAQ</a></li>
-                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="{{ url('/faq') }}">FAQ</a></li>
+                    <li><a href="{{ url('/terms-of-use') }}">Terms of Use</a></li>
+                    <li><a href="{{ url('/refund-policy') }}">Refund Policy</a></li>
                 </ul>
             </div>
 
