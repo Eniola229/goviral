@@ -119,7 +119,50 @@
         </div>
     </main>
 
+    <!-- Accpond Promotion Modal -->
+    <div class="modal fade" id="accpondPromoModal" tabindex="-1" aria-labelledby="accpondPromoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center px-4 pb-4">
+                    <div class="mb-4">
+                        <i class="feather-shopping-cart" style="font-size: 3rem; color: #3b82f6;"></i>
+                    </div>
+                    <h4 class="mb-3">Need Social Media Accounts?</h4>
+                    <p class="text-muted mb-4">
+                        Get verified and premium social media accounts at unbeatable prices! 
+                        Instagram, Facebook, Twitter, TikTok and more available now.
+                    </p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="https://www.accpond.com.ng" target="_blank" class="btn btn-primary">
+                            <i class="feather-external-link me-2"></i> Visit Accpond
+                        </a>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Maybe Later
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">www.accpond.com.ng</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @include('components.g-footer')
+
+    <script>
+        // Show the Accpond promotion modal on every page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show modal after 1 second delay
+            setTimeout(function() {
+                const modal = new bootstrap.Modal(document.getElementById('accpondPromoModal'));
+                modal.show();
+            }, 1000);
+        });
+    </script>
 
 </body>
 </html>

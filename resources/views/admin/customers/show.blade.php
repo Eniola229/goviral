@@ -68,7 +68,7 @@
                                 </div>
                                 <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
                                     <span class="fs-12 text-muted">Wallet Balance:</span>
-                                    <span class="fs-12 fw-bold text-success">₦{{ number_format($walletBalance, 2) }}</span>
+                                    <span class="fs-12 fw-bold text-success">₦{{ number_format($customer->balance, 2) }}</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
                                     <span class="fs-12 text-muted">Total Deposits:</span>

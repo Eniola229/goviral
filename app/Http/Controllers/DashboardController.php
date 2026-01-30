@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\OgaviralService;
+use App\Services\WalletService;
 use App\Models\Logged;
 
 class DashboardController extends Controller
@@ -46,6 +47,7 @@ class DashboardController extends Controller
 
     /**
      * Automatically check and update statuses for pending/processing orders
+     * WITH AUTO-REFUND SUPPORT
      */
     protected function autoUpdateOrderStatuses($orders)
     {
@@ -64,6 +66,12 @@ class DashboardController extends Controller
                         // Only update if status has changed
                         if ($order->status !== $newStatus) {
                             $oldStatus = $order->status;
+                            
+                            // Check if order should be auto-refunded
+                            if ($this->shouldAutoRefund($oldStatus, $newStatus)) {
+                                $this->processAutoRefund($order, $oldStatus, $newStatus);
+                                continue;
+                            }
                             
                             // Update order status
                             $order->update([
@@ -107,6 +115,76 @@ class DashboardController extends Controller
                     );
                 }
             }
+        }
+    }
+
+    /**
+     * Check if order should be auto-refunded
+     */
+    protected function shouldAutoRefund($oldStatus, $newStatus)
+    {
+        // If old status was pending or processing and new status is cancelled
+        return in_array($oldStatus, ['pending', 'processing']) && $newStatus === 'cancelled';
+    }
+
+    /**
+     * Process automatic refund
+     */
+    protected function processAutoRefund($order, $oldStatus, $newStatus)
+    {
+        try {
+            // Refund the user using WalletService
+            $refundResult = WalletService::refund(
+                $order->user, 
+                $order->charge, 
+                "Auto-refund for Order #" . substr($order->id, 0, 8) . " - Order cancelled by provider",
+                'AUTO-REFUND-' . $order->id
+            );
+
+            // Update order status to cancelled
+            $order->update(['status' => 'cancelled']);
+
+            // Log the auto-refund
+            $this->logOrderAction(
+                'dashboard_auto_refunded',
+                'AUTO-REFUND-' . $order->id,
+                $order->charge,
+                'success',
+                'Auto-refund processed on dashboard - Order cancelled by provider (Status changed from ' . $oldStatus . ' to cancelled)',
+                [
+                    'order_id' => $order->id,
+                    'api_order_id' => $order->api_order_id,
+                    'refund_amount' => $order->charge,
+                    'old_status' => $oldStatus,
+                    'new_status' => 'cancelled',
+                    'refund_type' => 'automatic',
+                    'triggered_from' => 'dashboard'
+                ],
+                $refundResult
+            );
+
+            \Log::info('Dashboard auto-refund processed for order ' . $order->id . ' - Amount: ₦' . number_format($order->charge, 2));
+
+        } catch (\Exception $e) {
+            \Log::error('Dashboard auto-refund failed for order ' . $order->id . ': ' . $e->getMessage());
+            
+            // Log the auto-refund failure
+            $this->logOrderAction(
+                'dashboard_auto_refund_failed',
+                'AUTO-REFUND-' . $order->id,
+                $order->charge,
+                'failed',
+                'Dashboard auto-refund failed',
+                [
+                    'order_id' => $order->id,
+                    'api_order_id' => $order->api_order_id,
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus,
+                    'triggered_from' => 'dashboard'
+                ],
+                null,
+                $e->getMessage()
+            );
         }
     }
 

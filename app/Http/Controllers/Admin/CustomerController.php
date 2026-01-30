@@ -201,29 +201,31 @@ class CustomerController extends Controller
         if (!auth('admin')->user()->canAdjustBalance()) {
             abort(403, 'Unauthorized action.');
         }
-
+        
         $customer = User::findOrFail($id);
-
+        
         $request->validate([
             'type' => 'required|in:credit,debit',
             'amount' => 'required|numeric|min:0.01',
             'description' => 'required|string',
         ]);
-
+        
         // Get current balance
         $latestWallet = Wallet::where('user_id', $customer->id)
             ->orderBy('created_at', 'desc')
             ->first();
         $currentBalance = $latestWallet ? $latestWallet->balance_after : 0;
-
+        
+        // Check if customer has enough balance for debit
         if ($request->type === 'debit' && $currentBalance < $request->amount) {
-            return back()->with('error', 'Insufficient balance');
+            return back()->with('error', 'Insufficient balance. Customer has ₦' . number_format($currentBalance, 2) . ' but you are trying to debit ₦' . number_format($request->amount, 2));
         }
-
+        
+        // Calculate new balance
         $newBalance = $request->type === 'credit' 
             ? $currentBalance + $request->amount 
             : $currentBalance - $request->amount;
-
+        
         // Create wallet transaction
         $wallet = Wallet::create([
             'user_id' => $customer->id,
@@ -236,7 +238,14 @@ class CustomerController extends Controller
             'payment_method' => 'admin_adjustment',
             'status' => 'success',
         ]);
-
+        
+        // Update user's balance in users table
+        if ($request->type === 'credit') {
+            $customer->increment('balance', $request->amount);
+        } else {
+            $customer->decrement('balance', $request->amount);
+        }
+        
         // Log the adjustment
         $this->logActivity(
             'adjusted_balance',
@@ -250,7 +259,7 @@ class CustomerController extends Controller
                 'balance_after' => $newBalance,
             ]
         );
-
+        
         // Also log in customer logs
         Logged::create([
             'user_id' => $customer->id,
@@ -262,7 +271,7 @@ class CustomerController extends Controller
             'description' => $request->description . ' (By Admin: ' . auth('admin')->user()->name . ')',
             'ip_address' => $request->ip(),
         ]);
-
-        return back()->with('success', 'Balance adjusted successfully');
+        
+        return back()->with('success', 'Balance adjusted successfully. New balance: ₦' . number_format($newBalance, 2));
     }
 }

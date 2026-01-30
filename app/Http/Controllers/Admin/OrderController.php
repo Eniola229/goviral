@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Wallet;
 use App\Models\Logged;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Traits\LogsAdminActivity;
 
@@ -15,7 +16,6 @@ class OrderController extends Controller
 
     protected $ogaviralService;
 
-    // Add this constructor
     public function __construct()
     {
         $this->ogaviralService = app(\App\Services\OgaviralService::class);
@@ -154,6 +154,12 @@ class OrderController extends Controller
                 $apiStatus = $status['status'];
                 $newStatus = $this->mapApiStatus($apiStatus);
 
+                // Check if order should be auto-refunded
+                if ($this->shouldAutoRefund($oldStatus, $newStatus)) {
+                    $this->processAutoRefund($order, $oldStatus, $newStatus);
+                    return back()->with('success', 'Order cancelled and refunded automatically. ₦' . number_format($order->charge, 2) . ' has been credited to customer\'s wallet.');
+                }
+
                 // Update order
                 $order->update([
                     'status' => $newStatus,
@@ -215,6 +221,12 @@ class OrderController extends Controller
                         if ($order->status !== $newStatus) {
                             $oldStatus = $order->status;
                             
+                            // Check if order should be auto-refunded
+                            if ($this->shouldAutoRefund($oldStatus, $newStatus)) {
+                                $this->processAutoRefund($order, $oldStatus, $newStatus);
+                                continue;
+                            }
+                            
                             $order->update([
                                 'status' => $newStatus,
                                 'api_response' => json_encode($status),
@@ -271,6 +283,12 @@ class OrderController extends Controller
                     if ($order->status !== $newStatus) {
                         $oldStatus = $order->status;
                         
+                        // Check if order should be auto-refunded
+                        if ($this->shouldAutoRefund($oldStatus, $newStatus)) {
+                            $this->processAutoRefund($order, $oldStatus, $newStatus);
+                            return;
+                        }
+                        
                         $order->update([
                             'status' => $newStatus,
                             'api_response' => json_encode($status),
@@ -310,6 +328,82 @@ class OrderController extends Controller
     }
 
     /**
+     * Check if order should be auto-refunded
+     */
+    protected function shouldAutoRefund($oldStatus, $newStatus)
+    {
+        // If old status was pending or processing and new status is cancelled
+        return in_array($oldStatus, ['pending', 'processing']) && $newStatus === 'cancelled';
+    }
+
+    /**
+     * Process automatic refund
+     */
+    protected function processAutoRefund($order, $oldStatus, $newStatus)
+    {
+        try {
+            // Get user's current balance
+            $user = $order->user;
+            $latestWallet = Wallet::where('user_id', $order->user_id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            $currentBalance = $latestWallet ? $latestWallet->balance_after : 0;
+
+            // Create refund wallet transaction
+            $wallet = Wallet::create([
+                'user_id' => $order->user_id,
+                'balance_before' => $currentBalance,
+                'amount' => $order->charge,
+                'balance_after' => $currentBalance + $order->charge,
+                'type' => 'credit',
+                'description' => "Auto-refund for Order #" . substr($order->id, 0, 8) . " - Order cancelled by provider",
+                'reference' => 'AUTO-REFUND-' . $order->id,
+                'payment_method' => 'refund',
+                'status' => 'success',
+            ]);
+
+            // Update user balance
+            $user->increment('balance', $order->charge);
+
+            // Update order status
+            $order->update(['status' => 'cancelled']);
+
+            // Log the auto-refund in admin logs
+            $this->logActivity(
+                'auto_refunded',
+                'System auto-refunded Order #' . substr($order->id, 0, 8) . ' - ₦' . number_format($order->charge, 2) . ' refunded to ' . $order->user->name . ' (Status changed from ' . $oldStatus . ' to cancelled)',
+                'Order',
+                $order->id,
+                [
+                    'refund_amount' => $order->charge,
+                    'order_status_changed' => [
+                        'old' => $oldStatus,
+                        'new' => 'cancelled'
+                    ],
+                    'refund_type' => 'automatic'
+                ]
+            );
+
+            // Log in customer's activity log
+            Logged::create([
+                'user_id' => $order->user_id,
+                'reference' => $wallet->reference,
+                'type' => 'wallet',
+                'method' => 'auto_refund',
+                'amount' => $order->charge,
+                'status' => 'success',
+                'description' => "Auto-refund processed for Order #" . substr($order->id, 0, 8) . " - Order was cancelled by provider",
+                'ip_address' => request()->ip(),
+            ]);
+
+            \Log::info('Auto-refund processed for order ' . $order->id . ' - Amount: ₦' . number_format($order->charge, 2));
+
+        } catch (\Exception $e) {
+            \Log::error('Auto-refund failed for order ' . $order->id . ': ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Map API status to database status
      */
     protected function mapApiStatus($apiStatus)
@@ -319,13 +413,14 @@ class OrderController extends Controller
             'In progress' => 'processing',
             'Processing' => 'processing',
             'Completed' => 'completed',
-            'Partial' => 'partial',
+            'Partial' => 'completed', // Map partial to completed
             'Cancelled' => 'cancelled',
             'Canceled' => 'cancelled',
         ];
         
         return $statusMap[$apiStatus] ?? strtolower($apiStatus);
     }
+
     /**
      * Update order status (Super Admin & Accountant only)
      */
@@ -338,7 +433,7 @@ class OrderController extends Controller
         $order = Order::with('user')->findOrFail($id);
 
         $request->validate([
-            'status' => 'required|in:pending,processing,completed,partial,cancelled',
+            'status' => 'required|in:pending,processing,completed,cancelled,refunded',
         ]);
 
         $oldStatus = $order->status;
@@ -384,10 +479,11 @@ class OrderController extends Controller
         $order = Order::with('user')->findOrFail($id);
 
         if ($order->status === 'completed') {
-            return back()->with('error', 'Cannot refund completed orders. Please contact support if you need to process a refund for a completed order.');
+            return back()->with('error', 'Cannot refund completed orders.');
         }
 
         // Get user's current balance
+        $user = $order->user;
         $latestWallet = Wallet::where('user_id', $order->user_id)
             ->orderBy('created_at', 'desc')
             ->first();
@@ -403,8 +499,11 @@ class OrderController extends Controller
             'description' => "Refund for Order #" . substr($order->id, 0, 8) . " - " . $order->service_name,
             'reference' => 'REFUND-' . $order->id,
             'payment_method' => 'refund',
-            'status' => 'completed',
+            'status' => 'success',
         ]);
+
+        // Update user balance
+        $user->increment('balance', $order->charge);
 
         // Update order status
         $oldStatus = $order->status;

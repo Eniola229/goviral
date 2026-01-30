@@ -197,7 +197,7 @@
                                 </div>
 
                                 <!-- Refund Order -->
-                                @if(!in_array($order->status, ['completed', 'cancelled', 'refunded']))
+                                @if(in_array($order->status, ['cancelled']))
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold">Refund Order</label>
                                     <form method="POST" action="{{ route('admin.orders.refund', $order->id) }}" onsubmit="return confirm('Are you sure you want to refund this order? ₦{{ number_format($order->charge, 2) }} will be credited to customer wallet.')">

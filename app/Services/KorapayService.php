@@ -43,7 +43,7 @@ class KorapayService
                     'email' => $user->email,
                 ],
                 'notification_url' => route('wallet.webhook'), // For webhook notifications
-                'merchant_bears_cost' => false, // Customer pays fees
+                'merchant_bears_cost' => true, // we bear the cost
                 'metadata' => [
                     'user_id' => $user->id,
                     'purpose' => 'wallet_topup',

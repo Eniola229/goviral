@@ -267,4 +267,48 @@
         </div>
     </main>
 
+    <!-- WhatsApp Community Modal -->
+    <div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center px-4 pb-4">
+                    <div class="mb-4">
+                        <i class="feather-message-circle" style="font-size: 3rem; color: #25D366;"></i>
+                    </div>
+                    <h4 class="mb-3">Join Our WhatsApp Community!</h4>
+                    <p class="text-muted mb-4">
+                        Stay updated with the latest offers, tips, and announcements.
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="https://whatsapp.com/channel/0029Vb7I1e3JuyAL31rIia0r" target="_blank" class="btn btn-success">
+                            <i class="feather-users me-2"></i> Join WhatsApp Channel
+                        </a>
+                        <a href="https://chat.whatsapp.com/JTFS32A4X8kBUk1V28qmxg" target="_blank" class="btn btn-outline-success">
+                            <i class="feather-message-square me-2"></i> Join WhatsApp Community
+                        </a>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Maybe Later
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @include('components.g-footer')
+
+    <script>
+        // Show WhatsApp modal on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const modal = new bootstrap.Modal(document.getElementById('whatsappModal'));
+                modal.show();
+            }, 1000);
+        });
+    </script>
+
+</body>
+</html>

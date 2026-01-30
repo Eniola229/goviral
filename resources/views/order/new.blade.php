@@ -106,6 +106,22 @@
     // Pass the grouped PHP data to JavaScript
     const groupedData = {!! json_encode($groupedServices) !!};
 
+    /**
+     * Remove "OGAVIRAL" or "OGA VIRAL" from service name
+     */
+    function cleanServiceName(name) {
+        // Remove 'OGAVIRAL' or 'OGA VIRAL' (case insensitive, with optional spaces)
+        let cleaned = name.replace(/OGA\s*VIRAL/gi, '');
+        
+        // Remove leading/trailing special characters, spaces, dashes, pipes, bullets
+        cleaned = cleaned.replace(/^[\s\-–—|•]+|[\s\-–—|•]+$/g, '');
+        
+        // Clean up multiple spaces to single space
+        cleaned = cleaned.replace(/\s+/g, ' ');
+        
+        return cleaned.trim();
+    }
+
     function selectPlatform(platformName) {
         // 1. Visual Feedback on Buttons
         document.querySelectorAll('.platform-btn').forEach(btn => {
@@ -131,11 +147,19 @@
         services.forEach(service => {
             const option = document.createElement('option');
             option.value = service.service;
-            option.text = `${service.name} - ₦${parseFloat(service.rate).toFixed(2)} / 1k`;
+            
+            // Clean the service name (remove OGAVIRAL)
+            const displayName = cleanServiceName(service.name);
+            
+            // Use marked_up_price if available, otherwise fall back to rate
+            const price = service.marked_up_price || service.rate;
+            
+            option.text = `${displayName} - ₦${parseFloat(price).toFixed(2)} / 1k`;
             
             // Attach data attributes for logic
             option.setAttribute('data-name', service.name);
-            option.setAttribute('data-rate', service.rate);
+            option.setAttribute('data-rate', price); // Use marked-up price here
+            option.setAttribute('data-original-rate', service.rate || service.original_price); // Keep original for reference
             option.setAttribute('data-min', service.min);
             option.setAttribute('data-max', service.max);
             option.setAttribute('data-category', service.category);
@@ -167,7 +191,7 @@
         // Enable quantity input
         quantityBox.disabled = false;
         
-        // Update Hidden Name
+        // Update Hidden Name (keep original name for backend)
         document.getElementById('service_name').value = selectedOption.getAttribute('data-name');
         
         // Get min/max
@@ -175,7 +199,10 @@
         const maxQty = selectedOption.getAttribute('data-max');
         const category = selectedOption.getAttribute('data-category');
         
-        document.getElementById('service_info').innerHTML = `Category: ${category}<br>Min: ${minQty}, Max: ${maxQty}`;
+        // Clean category name (remove OGAVIRAL)
+        const cleanCategory = cleanServiceName(category);
+        
+        document.getElementById('service_info').innerHTML = `Category: ${cleanCategory}<br>Min: ${minQty}, Max: ${maxQty}`;
         
         quantityBox.min = minQty;
         quantityBox.max = maxQty;
@@ -197,7 +224,7 @@
         }
         
         const quantity = parseFloat(document.getElementById('quantity').value) || 0;
-        const rate = parseFloat(selectedOption.getAttribute('data-rate')) || 0;
+        const rate = parseFloat(selectedOption.getAttribute('data-rate')) || 0; // This is already the marked-up price
         const minQty = parseFloat(selectedOption.getAttribute('data-min')) || 0;
         const maxQty = parseFloat(selectedOption.getAttribute('data-max')) || 0;
         
@@ -209,6 +236,7 @@
                 `Enter quantity between ${minQty} and ${maxQty}.`;
         }
         
+        // Calculate total using marked-up price
         let total = (quantity / 1000) * rate;
         updateTotalDisplay(total);
     }

@@ -100,16 +100,16 @@ class OgaviralService
     /**
      * Get Services List
      */
-
     public function getServices()
     {
         $response = $this->makeRequest('services');
-
+        
         // Check if valid and no error key exists
         if (is_array($response) && !isset($response['error'])) {
-            return $response;
+            // Apply pricing markup to all services
+            return \App\Services\PricingService::batchCalculatePrices($response);
         }
-
+        
         // --- ERROR HANDLING START ---
         
         // 1. Log the specific error message if it exists in the response
@@ -122,7 +122,7 @@ class OgaviralService
         }
         
         // --- ERROR HANDLING END ---
-
+        
         // Return empty array 
         return [];
     }

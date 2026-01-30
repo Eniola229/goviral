@@ -8,9 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!--! BEGIN: Favicon-->
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/b.png') }}" />
+     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/B.png') }}" />
     <style>
         * {
             margin: 0;
@@ -25,7 +23,7 @@
             --accent: #F59E0B;
             --dark: #0F172A;
             --dark-lighter: #1E293B;
-            --gray: #64748B;
+            --gray: #94A3B8;
             --light: #F1F5F9;
             --white: #FFFFFF;
         }
@@ -533,6 +531,22 @@
                 display: block;
             }
 
+            /* Hide Get Started button on mobile */
+            .nav-buttons .btn-primary {
+                display: none;
+            }
+
+            /* Make login button full width and centered on mobile */
+            .nav-buttons {
+                flex: 1;
+                justify-content: flex-end;
+            }
+
+            .nav-buttons .btn-outline {
+                padding: 0.6rem 1.5rem;
+                font-size: 0.9rem;
+            }
+
             .hero h1 {
                 font-size: 2.5rem;
             }
@@ -547,6 +561,17 @@
 
             .cta-content {
                 padding: 2.5rem 1.5rem;
+            }
+
+            /* Improve social links wrapping on mobile */
+            .social-links {
+                flex-wrap: wrap;
+            }
+
+            /* Better footer layout on mobile */
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
             }
         }
     </style>
@@ -564,17 +589,13 @@
         <div class="logo">{{ config('app.name', 'ViralBoost') }}</div>
         <ul class="nav-links">
             <li><a href="#features">Features</a></li>
-            <li><a href="#services">Services</a></li><!-- 
-            <li><a href="#pricing">Pricing</a></li> -->
+            <li><a href="#services">Services</a></li>
             <li><a href="#contact">Contact</a></li>
         </ul>
         <div class="nav-buttons">
             <a href="{{ route('login') }}" class="btn btn-outline">Login</a>
             <a href="{{ route('register') }}" class="btn btn-primary">Get Started</a>
         </div>
-        <button class="mobile-menu-btn">
-            <i class="fas fa-bars"></i>
-        </button>
     </nav>
 
     <!-- Hero Section -->
@@ -842,17 +863,10 @@
                 <h3>{{ config('app.name', 'ViralBoost') }}</h3>
                 <p style="color: var(--gray); margin-bottom: 1.5rem;">Your trusted partner for social media growth. Safe, fast, and reliable.</p>
                 <div class="social-links">
-                	<a href="https://whatsapp.com/channel/0029Vb7I1e3JuyAL31rIia0r" class="social-icon" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://whatsapp.com/channel/0029Vb7I1e3JuyAL31rIia0r" class="social-icon" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="Facebook"><i class="fab fa-facebook-f"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="Twitter/X"><i class="fab fa-twitter"></i></a>
                     <a href="#" class="social-icon" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
-<!--                     <a href="#" class="social-icon" target="_blank" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-                    <a href="#" class="social-icon" target="_blank" title="TikTok"><i class="fab fa-tiktok"></i></a>
-                    <a href="#" class="social-icon" target="_blank" title="YouTube"><i class="fab fa-youtube"></i></a>
-                    <a href="#" class="social-icon" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a> -->
-                <!--     
-                    <a href="#" class="social-icon" target="_blank" title="Reddit"><i class="fab fa-reddit-alien"></i></a>
-                    <a href="#" class="social-icon" target="_blank" title="Discord"><i class="fab fa-discord"></i></a> -->
                 </div>
             </div>
 
