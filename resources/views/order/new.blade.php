@@ -20,6 +20,17 @@
         </div>
 
         <div class="main-content">
+            @if(session('alert'))
+                    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+                        <div class="toast show bg-white shadow-lg border-0" role="alert">
+                            <div class="toast-header">
+                                <strong class="me-auto text-uppercase">{{ session('alert')['type'] }}</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                            </div>
+                            <div class="toast-body">{{ session('alert')['message'] }}</div>
+                        </div>
+                    </div>
+                @endif
             <div class="row">
                 <div class="col-lg-8 mx-auto">
                     <div class="card stretch stretch-full">

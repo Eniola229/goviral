@@ -111,12 +111,12 @@ class PricingService
         $defaultMarkup = config('pricing.default_markup', 15);
         
         // Log when using fallback markup for monitoring
-        Log::info('Using fallback markup for service', [
-            'service_name' => $serviceName,
-            'markup' => $defaultMarkup,
-            'platform' => $platform,
-            'service_type' => $serviceType
-        ]);
+        // Log::info('Using fallback markup for service', [
+        //     'service_name' => $serviceName,
+        //     'markup' => $defaultMarkup,
+        //     'platform' => $platform,
+        //     'service_type' => $serviceType
+        // ]);
         
         return $defaultMarkup;
     }
@@ -312,6 +312,64 @@ class PricingService
             'profit_amount' => $profit,
             'profit_margin' => round($profitMargin, 2), // Percentage of final price that is profit
             'markup_percentage' => round(($profit / $originalPrice) * 100, 2), // Percentage added to original
+        ];
+    }
+
+    /**
+     * Calculate actual profit from an order
+     * This reverses the markup to find the original cost
+     *
+     * @param float $customerCharge The amount customer paid
+     * @param int $quantity Order quantity
+     * @param string $serviceName Service name for markup detection
+     * @return float Profit amount
+     */
+    public static function calculateProfit($customerCharge, $quantity, $serviceName)
+    {
+        if ($customerCharge <= 0) {
+            return 0;
+        }
+
+        // Get the markup percentage that was used
+        $markupPercentage = self::getMarkupPercentage($serviceName);
+        
+        // Apply minimum/maximum limits
+        $minMarkup = config('pricing.minimum_markup', 15);
+        $maxMarkup = config('pricing.maximum_markup', 60);
+        $markupPercentage = max($minMarkup, min($maxMarkup, $markupPercentage));
+        
+        // Reverse calculate the original cost from customer charge
+        // Formula: customerCharge = originalCost * (1 + markup/100)
+        // Therefore: originalCost = customerCharge / (1 + markup/100)
+        $originalCost = $customerCharge / (1 + ($markupPercentage / 100));
+        
+        // Profit is the difference
+        $profit = $customerCharge - $originalCost;
+        
+        return round($profit, 2);
+    }
+
+    /**
+     * Get detailed profit breakdown for an order
+     *
+     * @param float $customerCharge
+     * @param int $quantity
+     * @param string $serviceName
+     * @return array
+     */
+    public static function getProfitBreakdown($customerCharge, $quantity, $serviceName)
+    {
+        $profit = self::calculateProfit($customerCharge, $quantity, $serviceName);
+        $originalCost = $customerCharge - $profit;
+        $profitMargin = $customerCharge > 0 ? ($profit / $customerCharge) * 100 : 0;
+        
+        return [
+            'customer_charge' => round($customerCharge, 2),
+            'original_cost' => round($originalCost, 2),
+            'profit_amount' => round($profit, 2),
+            'profit_margin' => round($profitMargin, 2),
+            'markup_percentage' => self::getMarkupPercentage($serviceName),
+            'quantity' => $quantity,
         ];
     }
 }

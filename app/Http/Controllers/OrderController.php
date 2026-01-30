@@ -260,7 +260,7 @@ class OrderController extends Controller
 
                 return redirect()->route('orders.index')->with('alert', [
                     'type' => 'error',
-                    'message' => 'Order failed: ' . $errorMessage . '. ₦' . number_format($request->charge, 2) . ' has been refunded to your wallet.'
+                    'message' => 'Order failed ₦' . number_format($request->charge, 2) . ' has been refunded to your wallet.'
                 ]);
             }
 
@@ -325,7 +325,7 @@ class OrderController extends Controller
 
             return redirect()->back()->with('alert', [
                 'type' => 'error',
-                'message' => 'An error occurred: ' . $e->getMessage() . $refundMessage
+                'message' => 'An error occurred: ' . $refundMessage
             ]);
         }
     }

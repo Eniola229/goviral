@@ -122,6 +122,41 @@
                                 </div>
                             </div>
 
+                            @php
+                                // Calculate profit breakdown
+                                $profitBreakdown = \App\Services\PricingService::getProfitBreakdown(
+                                    $order->charge,
+                                    $order->quantity,
+                                    $order->service_name
+                                );
+                            @endphp
+
+                            <!-- Profit Section -->
+                            <div class="mb-3 pb-3 border-bottom bg-soft-primary rounded p-2">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fs-12 text-muted">
+                                        <i class="feather-trending-up me-1"></i> Your Profit:
+                                    </span>
+                                    <span class="fs-12 fw-bold text-primary">₦{{ number_format($profitBreakdown['profit_amount'], 2) }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="fs-11 text-muted">Profit Margin:</span>
+                                    <span class="fs-11 fw-bold text-primary">{{ number_format($profitBreakdown['profit_margin'], 1) }}%</span>
+                                </div>
+                            </div>
+
+                            <!-- Cost Breakdown -->
+                            <div class="mb-3 pb-3 border-bottom">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fs-11 text-muted">API Cost:</span>
+                                    <span class="fs-11">₦{{ number_format($profitBreakdown['original_cost'], 2) }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="fs-11 text-muted">Markup Applied:</span>
+                                    <span class="fs-11">{{ number_format($profitBreakdown['markup_percentage'], 0) }}%</span>
+                                </div>
+                            </div>
+
                             <div class="mb-3 pb-3 border-bottom">
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="fs-12 text-muted">Created:</span>
@@ -267,7 +302,7 @@
                                                 <td><code class="fs-11">{{ $log->method }}</code></td>
                                                 <td>{{ Str::limit($log->description, 60) }}</td>
                                                 <td>
-                                                    @if($log->status == 'completed')
+                                                    @if($log->status == 'success')
                                                         <span class="badge bg-soft-success text-success">Success</span>
                                                     @elseif($log->status == 'failed')
                                                         <span class="badge bg-soft-danger text-danger">Failed</span>

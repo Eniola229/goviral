@@ -133,6 +133,36 @@
             </div>
         </div>
 
+        <!-- Add Total Profit Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-gradient-primary text-white">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="text-white mb-1">
+                                    <i class="feather-trending-up me-2"></i>Total Profit (Based on Markup)
+                                </h5>
+                                <p class="text-white-50 mb-0">Revenue minus API costs across all orders</p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                @php
+                                    $totalProfit = $orders->sum(function($order) {
+                                        return \App\Services\PricingService::calculateProfit(
+                                            $order->charge, 
+                                            $order->quantity, 
+                                            $order->service_name
+                                        );
+                                    });
+                                @endphp
+                                <h2 class="text-white mb-0">₦{{ number_format($totalProfit, 2) }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Orders Table -->
         <div class="card">
             <div class="card-header">
@@ -184,6 +214,7 @@
                                 <th>Service</th>
                                 <th>Quantity</th>
                                 <th>Charge</th>
+                                <th>Profit</th>
                                 <th>Status</th>
                                 <th>Date</th>
                                 <th class="text-end">Actions</th>
@@ -191,6 +222,19 @@
                         </thead>
                         <tbody>
                             @forelse($orders as $orderItem)
+                                @php
+                                    // Calculate profit for this order
+                                    $profit = \App\Services\PricingService::calculateProfit(
+                                        $orderItem->charge, 
+                                        $orderItem->quantity, 
+                                        $orderItem->service_name
+                                    );
+                                    
+                                    // Calculate profit percentage
+                                    $profitPercentage = $orderItem->charge > 0 
+                                        ? (($profit / $orderItem->charge) * 100) 
+                                        : 0;
+                                @endphp
                                 <tr>
                                     <td>
                                         <code class="fs-11">#{{ substr($orderItem->id, 0, 8) }}</code>
@@ -207,6 +251,12 @@
                                     </td>
                                     <td>{{ number_format($orderItem->quantity) }}</td>
                                     <td class="text-success fw-bold">₦{{ number_format($orderItem->charge, 2) }}</td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="text-primary fw-bold">₦{{ number_format($profit, 2) }}</span>
+                                            <small class="text-muted">{{ number_format($profitPercentage, 1) }}%</small>
+                                        </div>
+                                    </td>
                                     <td>
                                         @if($orderItem->status == 'completed')
                                             <span class="badge bg-soft-success text-success">Completed</span>
@@ -229,7 +279,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-4 text-muted">
+                                    <td colspan="9" class="text-center py-4 text-muted">
                                         <i class="feather-inbox fs-3 d-block mb-2"></i>
                                         No orders found
                                     </td>
