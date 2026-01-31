@@ -36,24 +36,33 @@ class WalletController extends Controller
         // Ensure absolute URL - Korapay requires this
         $redirectUrl = route('wallet.callback', [], true);
         
-        Log::info('Initiating Korapay payment', [
-            'amount' => $amount,
-            'user_id' => $user->id,
-            'redirect_url' => $redirectUrl
-        ]);
+        // Log::info('Initiating Korapay payment', [
+        //     'amount' => $amount,
+        //     'user_id' => $user->id,
+        //     'redirect_url' => $redirectUrl
+        // ]);
 
         // Initialize Korapay Transaction
         // This will create a Logged entry with status = 'pending'
         $result = $this->korapayService->initializeTransaction($amount, $user, $redirectUrl);
 
         if ($result['success']) {
+            // Create a pending wallet entry right away
+            WalletService::initiateDeposit(
+                $user,
+                $amount,
+                $result['reference'],
+                'Korapay',
+                "Top-up via Korapay (Ref: {$result['reference']})"
+            );
+
             // Store the reference in session to verify later
             session(['pending_payment_reference' => $result['reference']]);
             
-            Log::info('Korapay checkout URL generated', [
-                'reference' => $result['reference'],
-                'checkout_url' => $result['data']['checkout_url']
-            ]);
+            // Log::info('Korapay checkout URL generated', [
+            //     'reference' => $result['reference'],
+            //     'checkout_url' => $result['data']['checkout_url']
+            // ]);
             
             return redirect()->away($result['data']['checkout_url']);
         }
@@ -74,10 +83,10 @@ class WalletController extends Controller
                   ?? session('pending_payment_reference');
 
         if (!$reference) {
-            Log::error('Korapay Callback: No reference found', [
-                'query_params' => $request->all(),
-                'session_ref' => session('pending_payment_reference')
-            ]);
+            // Log::error('Korapay Callback: No reference found', [
+            //     'query_params' => $request->all(),
+            //     'session_ref' => session('pending_payment_reference')
+            // ]);
             
             return redirect()->route('wallet.index')->with('alert', [
                 'type' => 'error',
@@ -85,16 +94,16 @@ class WalletController extends Controller
             ]);
         }
 
-        Log::info('Korapay Callback received', [
-            'reference' => $reference,
-            'all_params' => $request->all()
-        ]);
+        // Log::info('Korapay Callback received', [
+        //     'reference' => $reference,
+        //     'all_params' => $request->all()
+        // ]);
 
         // Check if already processed by checking the Logged table status
         $loggedEntry = Logged::where('reference', $reference)->first();
         
         if (!$loggedEntry) {
-            Log::error('Korapay: No logged entry found', ['reference' => $reference]);
+            //Log::error('Korapay: No logged entry found', ['reference' => $reference]);
             
             return redirect()->route('wallet.index')->with('alert', [
                 'type' => 'error',
@@ -102,47 +111,27 @@ class WalletController extends Controller
             ]);
         }
 
-        // If the logged entry status is already 'success', it means we've processed it
-        if ($loggedEntry->status === 'success') {
-            // Check if wallet was already credited
-            $walletEntry = Wallet::where('reference', $reference)->first();
+        // If already fully processed (wallet entry is success), skip everything
+        $walletEntry = Wallet::where('reference', $reference)->first();
+        if ($walletEntry && $walletEntry->status === 'success') {
+            //Log::info('Korapay: Transaction already processed', ['reference' => $reference]);
             
-            if ($walletEntry) {
-                Log::info('Korapay: Transaction already processed and wallet credited', [
-                    'reference' => $reference
-                ]);
-                
-                return redirect()->route('wallet.index')->with('alert', [
-                    'type' => 'success',
-                    'message' => 'Payment already processed. Wallet balance: ₦' . number_format($user->balance, 2)
-                ]);
-            }
+            session()->forget('pending_payment_reference');
+            
+            return redirect()->route('wallet.index')->with('alert', [
+                'type' => 'success',
+                'message' => 'Payment already processed. Wallet balance: ₦' . number_format($user->balance, 2)
+            ]);
         }
 
         // Verify with Korapay
         $result = $this->korapayService->verifyTransaction($reference);
 
         if ($result['success']) {
-            // Check one more time before crediting (race condition protection)
-            $walletEntry = Wallet::where('reference', $reference)->first();
-            
-            if ($walletEntry) {
-                Log::info('Korapay: Wallet already credited (race condition check)', [
-                    'reference' => $reference
-                ]);
-                
-                session()->forget('pending_payment_reference');
-                
-                return redirect()->route('wallet.index')->with('alert', [
-                    'type' => 'success',
-                    'message' => 'Payment successful. Current balance: ₦' . number_format($user->wallet_balance, 2)
-                ]);
-            }
-
-            // Credit the Wallet with the ORIGINAL amount (not amount_paid with fees)
+            // Credit the wallet — this will update the pending entry to success
             WalletService::deposit(
                 $user, 
-                $result['amount'], // This is now the original amount from Logged table
+                $result['amount'],
                 $reference, 
                 'Korapay', 
                 "Top-up via Korapay (Ref: {$reference})"
@@ -151,10 +140,10 @@ class WalletController extends Controller
             // Clear the session
             session()->forget('pending_payment_reference');
 
-            Log::info('Korapay: Payment successful and wallet credited', [
-                'reference' => $reference,
-                'amount' => $result['amount']
-            ]);
+            // Log::info('Korapay: Payment successful and wallet credited', [
+            //     'reference' => $reference,
+            //     'amount' => $result['amount']
+            // ]);
 
             return redirect()->route('wallet.index')->with('alert', [
                 'type' => 'success',
@@ -162,14 +151,17 @@ class WalletController extends Controller
             ]);
         }
 
-        Log::warning('Korapay: Payment verification failed', [
-            'reference' => $reference,
-            'result' => $result
-        ]);
+        // Log::warning('Korapay: Payment verification failed', [
+        //     'reference' => $reference,
+        //     'result' => $result
+        // ]);
+
+        // Mark the pending wallet entry as failed
+        WalletService::markDepositFailed($reference);
 
         return redirect()->route('wallet.index')->with('alert', [
             'type' => 'error',
-            'message' => $result['message'] ?? 'Payment verification failed. Please contact support if your account was debited.'
+            'message' => 'Payment verification failed. Please contact support if your account was debited.'
         ]);
     }
 
@@ -197,7 +189,7 @@ class WalletController extends Controller
             return response()->json(['message' => 'Event acknowledged'], 200);
         }
 
-        $reference = $paymentData['payment_reference'] ?? null; // Korapay uses payment_reference for merchant reference
+        $reference = $paymentData['payment_reference'] ?? null;
         $status = strtolower($paymentData['status'] ?? '');
 
         if (!$reference || $status !== 'success') {
@@ -215,29 +207,20 @@ class WalletController extends Controller
             return response()->json(['error' => 'Transaction not found'], 404);
         }
 
-        // Check if already processed
-        if ($loggedEntry->status === 'success') {
-            $walletEntry = Wallet::where('reference', $reference)->first();
-            if ($walletEntry) {
-                Log::info('Korapay Webhook: Already processed', ['reference' => $reference]);
-                return response()->json(['message' => 'Already processed'], 200);
-            }
+        // Check if wallet entry already success — already processed, skip
+        $walletEntry = Wallet::where('reference', $reference)->first();
+        if ($walletEntry && $walletEntry->status === 'success') {
+            Log::info('Korapay Webhook: Already processed', ['reference' => $reference]);
+            return response()->json(['message' => 'Already processed'], 200);
         }
 
         $user = \App\Models\User::find($loggedEntry->user_id);
         if (!$user) {
-            Log::error('Korapay Webhook: User not found', ['user_id' => $loggedEntry->user_id]);
+           // Log::error('Korapay Webhook: User not found', ['user_id' => $loggedEntry->user_id]);
             return response()->json(['error' => 'User not found'], 404);
         }
 
-        // Check if wallet already credited (race condition protection)
-        $walletEntry = Wallet::where('reference', $reference)->first();
-        if ($walletEntry) {
-            Log::info('Korapay Webhook: Wallet already credited', ['reference' => $reference]);
-            return response()->json(['message' => 'Already processed'], 200);
-        }
-
-        // Credit wallet with ORIGINAL amount from Logged table
+        // Credit wallet — updates pending entry to success
         WalletService::deposit(
             $user,
             $loggedEntry->amount, 
@@ -255,11 +238,11 @@ class WalletController extends Controller
             ),
         ]);
 
-        Log::info('Korapay Webhook: Payment processed successfully', [
-            'reference' => $reference,
-            'amount' => $loggedEntry->amount,
-            'user_id' => $user->id
-        ]);
+        // Log::info('Korapay Webhook: Payment processed successfully', [
+        //     'reference' => $reference,
+        //     'amount' => $loggedEntry->amount,
+        //     'user_id' => $user->id
+        // ]);
 
         return response()->json(['message' => 'Webhook processed'], 200);
     }

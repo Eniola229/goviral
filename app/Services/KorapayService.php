@@ -63,11 +63,11 @@ class KorapayService
                 'ip_address' => request()->ip(),
             ]);
 
-            \Log::info('Korapay Initialize Request', [
-                'reference' => $reference,
-                'amount' => $amount,
-                'redirect_url' => $redirectUrl
-            ]);
+            // \Log::info('Korapay Initialize Request', [
+            //     'reference' => $reference,
+            //     'amount' => $amount,
+            //     'redirect_url' => $redirectUrl
+            // ]);
 
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->secretKey,

@@ -102,9 +102,9 @@
                                                     
                                                     <td class="text-muted">₦{{ number_format($log->balance_after, 2) }}</td>
                                                     <td>
-                                                        <span class="badge bg-{{ $log->status == 'success' ? 'success' : 'danger' }}">
-                                                            {{ ucfirst($log->status) }}
-                                                        </span>
+                                                  <span class="badge bg-{{ $log->status == 'success' ? 'success' : ($log->status == 'pending' ? 'warning' : 'danger') }}">
+                                                        {{ ucfirst($log->status) }}
+                                                    </span>
                                                     </td>
                                                 </tr>
                                             @empty

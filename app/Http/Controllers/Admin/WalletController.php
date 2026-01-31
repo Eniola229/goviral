@@ -136,14 +136,20 @@ class WalletController extends Controller
         if (!auth('admin')->user()->canEditTransactions()) {
             abort(403, 'Unauthorized action.');
         }
-
         $transaction = Wallet::with('user')->findOrFail($id);
-
         if ($transaction->status !== 'pending') {
             return back()->with('error', 'Only pending transactions can be approved');
         }
 
-        $transaction->update(['status' => 'completed']);
+        $balanceAfter = $transaction->user->balance + $transaction->amount;
+
+        $transaction->update([
+            'status' => 'success',
+            'balance_after' => $balanceAfter,
+        ]);
+
+        // Increment the user's actual balance
+        $transaction->user->increment('balance', $transaction->amount);
 
         // Log the approval in admin logs
         $this->logActivity(
@@ -154,11 +160,10 @@ class WalletController extends Controller
             [
                 'status' => [
                     'old' => 'pending',
-                    'new' => 'completed'
+                    'new' => 'success'
                 ]
             ]
         );
-
         // Log in customer's activity log
         Logged::create([
             'user_id' => $transaction->user_id,
@@ -170,7 +175,6 @@ class WalletController extends Controller
             'description' => "Transaction {$transaction->reference} approved by admin: " . auth('admin')->user()->name,
             'ip_address' => $request->ip(),
         ]);
-
         return back()->with('success', 'Transaction approved successfully');
     }
 
@@ -195,7 +199,6 @@ class WalletController extends Controller
 
         $reason = $request->reason ?? 'No reason provided';
 
-        // If it was a credit (deposit), we need to reverse the balance
         if ($transaction->type === 'credit') {
             // Update transaction status
             $transaction->update([
@@ -203,18 +206,6 @@ class WalletController extends Controller
                 'description' => $transaction->description . ' (Rejected by admin: ' . $reason . ')'
             ]);
 
-            // Reverse the balance
-            Wallet::create([
-                'user_id' => $transaction->user_id,
-                'balance_before' => $transaction->balance_after,
-                'amount' => $transaction->amount,
-                'balance_after' => $transaction->balance_before,
-                'type' => 'debit',
-                'description' => "Reversal of rejected transaction: " . $transaction->reference . " - Reason: " . $reason,
-                'reference' => 'REV-' . $transaction->reference,
-                'payment_method' => 'reversal',
-                'status' => 'success',
-            ]);
         } else {
             $transaction->update(['status' => 'failed']);
         }

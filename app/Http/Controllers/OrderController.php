@@ -96,12 +96,72 @@ class OrderController extends Controller
 
         $user = Auth::user();
         $orderReference = 'ORD-' . strtoupper(Str::random(8));
-        
+
+        // --- SERVER-SIDE CHARGE CALCULATION (SECURE) ---        
+        // fetch the real rate from Ogaviral for this service_id
+        $services = $this->ogaviralService->getServices();
+        $serviceRate = null;
+
+        foreach ($services as $service) {
+            if ((int)$service['service'] === (int)$request->service_id) {
+                $serviceRate = (float)$service['rate'];
+                break;
+            }
+        }
+
+        // If service not found or rate is invalid, reject the order
+        if ($serviceRate === null || $serviceRate <= 0) {
+            $this->logOrderAction(
+                'order_failed',
+                $orderReference,
+                0,
+                'failed',
+                'Service not found or invalid rate from API',
+                ['service_id' => $request->service_id],
+                null,
+                'Invalid service'
+            );
+
+            return redirect()->back()->with('alert', [
+                'type' => 'error',
+                'message' => 'Invalid service selected. Please try again.'
+            ]);
+        }
+
+        // Calculate the correct charge using PricingService markup
+        // rate from API is per 1000, so: (quantity / 1000) * marked_up_rate
+        $markedUpRate = \App\Services\PricingService::calculatePrice($serviceRate, $request->service_name);
+        $serverCharge = round(($request->quantity / 1000) * $markedUpRate, 2);
+
+        // If frontend charge doesn't match server charge, log it and use server charge
+        if ((float)$request->charge !== $serverCharge) {
+            $this->logOrderAction(
+                'order_initiated',
+                $orderReference,
+                $charge,
+                'failed',
+                'Charge mismatch detected',
+                [
+                    'service_id' => $request->service_id,
+                    'service_name' => $request->service_name,
+                    'link' => $request->link,
+                    'quantity' => $request->quantity,
+                    'charge' => $charge,
+                    'frontend_charge' => $request->charge,
+                ],
+                ['status' => 'initiated']
+            );
+        }
+
+        // Use the server-calculated charge from here on
+        $charge = $serverCharge;
+        // --- END SECURE CALCULATION ---
+
         // Log initial order request
         $this->logOrderAction(
             'order_initiated',
             $orderReference,
-            $request->charge,
+            $charge,
             'success',
             'Order initiated by user',
             [
@@ -109,21 +169,22 @@ class OrderController extends Controller
                 'service_name' => $request->service_name,
                 'link' => $request->link,
                 'quantity' => $request->quantity,
-                'charge' => $request->charge,
+                'charge' => $charge,
+                'frontend_charge' => $request->charge,
             ],
             ['status' => 'initiated']
         );
         
         // 1. Check Balance (Double check)
-        if ($user->balance < $request->charge) {
+        if ($user->balance < $charge) {
             // Log insufficient balance
             $this->logOrderAction(
                 'order_failed',
                 $orderReference,
-                $request->charge,
+                $charge,
                 'failed',
                 'Insufficient wallet balance',
-                ['balance' => $user->balance, 'required' => $request->charge],
+                ['balance' => $user->balance, 'required' => $charge],
                 null,
                 'Insufficient funds'
             );
@@ -138,7 +199,7 @@ class OrderController extends Controller
         try {
             WalletService::withdraw(
                 $user, 
-                $request->charge, 
+                $charge, 
                 $orderReference, 
                 'Order Debit', 
                 "Order for: {$request->service_name}"
@@ -148,10 +209,10 @@ class OrderController extends Controller
             $this->logOrderAction(
                 'wallet_debited',
                 $orderReference,
-                $request->charge,
+                $charge,
                 'success',
                 'Wallet debited for order',
-                ['previous_balance' => $user->balance + $request->charge],
+                ['previous_balance' => $user->balance + $charge],
                 ['new_balance' => $user->balance]
             );
 
@@ -163,7 +224,6 @@ class OrderController extends Controller
             );
 
             // 4. Handle API Response
-            // Ogaviral returns {"order": 23501} on success
             if (isset($apiResponse['order']) && is_numeric($apiResponse['order'])) {
 
                 // SUCCESS: Save Order
@@ -173,7 +233,7 @@ class OrderController extends Controller
                     'service_name' => $request->service_name,
                     'link' => $request->link,
                     'quantity' => $request->quantity,
-                    'charge' => $request->charge,
+                    'charge' => $charge,
                     'status' => 'processing',
                     'api_order_id' => $apiResponse['order'],
                     'api_response' => json_encode($apiResponse),
@@ -183,7 +243,7 @@ class OrderController extends Controller
                 $this->logOrderAction(
                     'order_success',
                     $orderReference,
-                    $request->charge,
+                    $charge,
                     'success',
                     'Order placed successfully',
                     [
@@ -215,7 +275,7 @@ class OrderController extends Controller
                 $this->logOrderAction(
                     'api_failed',
                     $orderReference,
-                    $request->charge,
+                    $charge,
                     'failed',
                     'API order placement failed',
                     [
@@ -230,7 +290,7 @@ class OrderController extends Controller
                 // Refund the user
                 $refundResult = WalletService::refund(
                     $user, 
-                    $request->charge, 
+                    $charge, 
                     'Order Failed - API Error: ' . $errorMessage,
                     $orderReference
                 );
@@ -239,7 +299,7 @@ class OrderController extends Controller
                 $this->logOrderAction(
                     'order_refunded',
                     $orderReference,
-                    $request->charge,
+                    $charge,
                     'success',
                     'Wallet refunded after API failure',
                     ['original_reference' => $orderReference],
@@ -253,14 +313,14 @@ class OrderController extends Controller
                     'service_name' => $request->service_name,
                     'link' => $request->link,
                     'quantity' => $request->quantity,
-                    'charge' => $request->charge,
+                    'charge' => $charge,
                     'status' => 'cancelled',
                     'api_response' => json_encode($apiResponse),
                 ]);
 
                 return redirect()->route('orders.index')->with('alert', [
                     'type' => 'error',
-                    'message' => 'Order failed ₦' . number_format($request->charge, 2) . ' has been refunded to your wallet.'
+                    'message' => 'Order failed ₦' . number_format($charge, 2) . ' has been refunded to your wallet.'
                 ]);
             }
 
@@ -269,7 +329,7 @@ class OrderController extends Controller
             $this->logOrderAction(
                 'system_error',
                 $orderReference,
-                $request->charge,
+                $charge,
                 'failed',
                 'System error during order processing',
                 [
@@ -285,7 +345,7 @@ class OrderController extends Controller
                 try {
                     WalletService::refund(
                         $user, 
-                        $request->charge, 
+                        $charge, 
                         'System Error - ' . $e->getMessage(),
                         $orderReference
                     );
@@ -294,7 +354,7 @@ class OrderController extends Controller
                     $this->logOrderAction(
                         'error_refunded',
                         $orderReference,
-                        $request->charge,
+                        $charge,
                         'success',
                         'Wallet refunded after system error',
                         ['original_reference' => $orderReference],
@@ -309,7 +369,7 @@ class OrderController extends Controller
                     $this->logOrderAction(
                         'refund_failed',
                         $orderReference,
-                        $request->charge,
+                        $charge,
                         'failed',
                         'Refund failed after system error',
                         ['original_reference' => $orderReference],

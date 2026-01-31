@@ -8,35 +8,81 @@ use Illuminate\Support\Facades\DB;
 
 class WalletService
 {
-    // Deposit Money
+    /**
+     * Create a pending wallet entry when payment is initiated
+     * This runs BEFORE the user is redirected to Korapay
+     */
+    public static function initiateDeposit(User $user, $amount, $reference, $paymentMethod = 'Korapay', $description = 'Wallet Top Up')
+    {
+        Wallet::create([
+            'user_id' => $user->id,
+            'balance_before' => $user->balance,
+            'amount' => $amount,
+            'balance_after' => $user->balance, // Same as before until confirmed
+            'type' => 'credit',
+            'description' => $description,
+            'reference' => $reference,
+            'payment_method' => $paymentMethod,
+            'status' => 'pending'
+        ]);
+    }
+
+    // Deposit Money - Updates the pending record to success
     public static function deposit(User $user, $amount, $reference, $paymentMethod = 'Korapay', $description = 'Wallet Top Up')
     {
         return DB::transaction(function () use ($user, $amount, $reference, $paymentMethod, $description) {
             
-            // 1. Capture Balance Before
+            // Find the existing pending wallet entry
+            $walletEntry = Wallet::where('reference', $reference)
+                                 ->where('status', 'pending')
+                                 ->first();
+
+            // Capture current balance
             $balanceBefore = $user->balance;
-            
-            // 2. Calculate Balance After
             $balanceAfter = $balanceBefore + $amount;
 
-            // 3. Save the Ledger Entry
-            Wallet::create([
-                'user_id' => $user->id,
-                'balance_before' => $balanceBefore,
-                'amount' => $amount,
-                'balance_after' => $balanceAfter,
-                'type' => 'credit',
-                'description' => $description,
-                'reference' => $reference,
-                'payment_method' => $paymentMethod,
-                'status' => 'success'
-            ]);
+            if ($walletEntry) {
+                // Update the existing pending entry to success with real balance_after
+                $walletEntry->update([
+                    'balance_before' => $balanceBefore,
+                    'balance_after' => $balanceAfter,
+                    'status' => 'success',
+                ]);
+            } else {
+                // Fallback: create new entry if pending one doesn't exist for some reason
+                Wallet::create([
+                    'user_id' => $user->id,
+                    'balance_before' => $balanceBefore,
+                    'amount' => $amount,
+                    'balance_after' => $balanceAfter,
+                    'type' => 'credit',
+                    'description' => $description,
+                    'reference' => $reference,
+                    'payment_method' => $paymentMethod,
+                    'status' => 'success'
+                ]);
+            }
 
-            // 4. Update User Balance
+            // Update User Balance
             $user->increment('balance', $amount);
             
             return true;
         });
+    }
+
+    // Mark a pending deposit as failed — balance_after stays equal to balance_before
+    public static function markDepositFailed(string $reference)
+    {
+        $walletEntry = Wallet::where('reference', $reference)
+                             ->where('status', 'pending')
+                             ->first();
+
+        if ($walletEntry) {
+            $walletEntry->update([
+                'balance_after' => $walletEntry->balance_before, // No change
+                'status' => 'failed',
+            ]);
+        }
     }
 
     // Withdraw Money (Place Order)
@@ -47,13 +93,13 @@ class WalletService
                 throw new \Exception('Insufficient funds');
             }
 
-            // 1. Capture Balance Before
+            // Capture Balance Before
             $balanceBefore = $user->balance;
 
-            // 2. Calculate Balance After
+            // Calculate Balance After
             $balanceAfter = $balanceBefore - $amount;
 
-            // 3. Save the Ledger Entry
+            // Save the Ledger Entry
             Wallet::create([
                 'user_id' => $user->id,
                 'balance_before' => $balanceBefore,
@@ -78,16 +124,16 @@ class WalletService
     {
         return DB::transaction(function () use ($user, $amount, $description, $originalReference) {
             
-            // 1. Capture Balance Before
+            // Capture Balance Before
             $balanceBefore = $user->balance;
             
-            // 2. Calculate Balance After
+            // Calculate Balance After
             $balanceAfter = $balanceBefore + $amount;
 
-            // 3. Generate Refund Reference
+            // Generate Refund Reference
             $refundReference = 'REFUND-' . strtoupper(uniqid());
 
-            // 4. Save the Ledger Entry
+            // Save the Ledger Entry
             Wallet::create([
                 'user_id' => $user->id,
                 'balance_before' => $balanceBefore,
@@ -100,7 +146,7 @@ class WalletService
                 'status' => 'success'
             ]);
 
-            // 5. Update User Balance
+            // Update User Balance
             $user->increment('balance', $amount);
             
             return [
