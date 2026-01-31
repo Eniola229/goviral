@@ -3,7 +3,7 @@
         <div class="m-header">
             <a href="{{ route('dashboard') }}" class="b-brand">
                 <!-- ========   change your logo hear   ============ -->
-            <img src="{{ asset('assets/images/BOOSTER-LOGO.png') }}"
+            <img src="{{ asset('assets/images/BOOSTER-logo.png') }}"
                  alt=""
                  class="logo logo-lg"
                  style="width: 140px; height: auto; display: block; margin: 0 auto;" />

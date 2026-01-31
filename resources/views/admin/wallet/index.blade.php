@@ -34,6 +34,7 @@
             </div>
         @endif
 
+        @if(!auth('admin')->user()->isSupport())
         <!-- Statistics Cards -->
         <div class="row mb-4 mt-4">
             <div class="col-md-6 col-lg-2">
@@ -99,6 +100,7 @@
                 Review Now
             </a>
         </div>
+        @endif
         @endif
 
         <!-- Main Content -->

@@ -13,7 +13,7 @@
     <!--! The above 6 meta tags *must* come first in the head; any other head content must come *after* these tags !-->
 
     <!--! BEGIN: Apps Title-->
-    <title>{{ config('app.name', 'Booster') }} || @yield('title', 'Premium Social Media Growth Services in Nigeria')</title>
+    <title>{{ config('app.name', 'Booster') }} || @yield('title', 'Premium Social Media Growth Services')</title>
     <!--! END:  Apps Title-->
 
     <!-- Open Graph / Social Sharing -->

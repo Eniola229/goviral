@@ -215,6 +215,7 @@
                     </div>
                 </div>
 
+                @if(!auth('admin')->user()->isSupport())
                 <!-- REVENUE STATISTICS -->
                 <div class="col-xxl-4 col-md-6">
                     <div class="card stretch stretch-full">
@@ -241,6 +242,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- SUPPORT TICKETS -->
                 <div class="col-xxl-4 col-md-6">
@@ -268,6 +270,7 @@
                     </div>
                 </div>
 
+                @if(!auth('admin')->user()->isSupport())
                 <!-- WALLET STATISTICS -->
                 <div class="col-12 mb-3 mt-4">
                     <h6 class="fw-bold text-dark">Wallet Transaction Statistics</h6>
@@ -342,6 +345,7 @@
                         </a>
                     </div>
                 </div>
+                @endif
                 @endif
 
                 <!-- RECENT ORDERS TABLE -->
@@ -434,6 +438,7 @@
                     </div>
                 </div>
 
+                @if(!auth('admin')->user()->isSupport())
                 <!-- RECENT TRANSACTIONS -->
                 <div class="col-12 mt-3">
                     <div class="card stretch stretch-full">
@@ -499,6 +504,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
             </div>
         </div>

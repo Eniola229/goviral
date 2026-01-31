@@ -116,6 +116,7 @@
                 </div>
             </div>
 
+            @if(!auth('admin')->user()->isSupport())
             <div class="col-xxl-2 col-md-4 col-6">
                 <div class="card stretch stretch-full">
                     <div class="card-body">
@@ -131,19 +132,21 @@
                     </div>
                 </div>
             </div>
+            @endif
         </div>
 
+        @if(!auth('admin')->user()->isSupport())
         <!-- Add Total Profit Card -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card bg-gradient-primary text-white">
+                <div class="card bg-gradient-primary text-dark">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-8">
-                                <h5 class="text-white mb-1">
+                                <h5 class="text-dark mb-1">
                                     <i class="feather-trending-up me-2"></i>Total Profit (Based on Markup)
                                 </h5>
-                                <p class="text-white-50 mb-0">Revenue minus API costs across all orders</p>
+                                <p class="text-dark-50 mb-0">Revenue minus API costs across all orders</p>
                             </div>
                             <div class="col-md-4 text-end">
                                 @php
@@ -155,13 +158,14 @@
                                         );
                                     });
                                 @endphp
-                                <h2 class="text-white mb-0">₦{{ number_format($totalProfit, 2) }}</h2>
+                                <h2 class="text-dark mb-0">₦{{ number_format($totalProfit, 2) }}</h2>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Orders Table -->
         <div class="card">
@@ -214,7 +218,9 @@
                                 <th>Service</th>
                                 <th>Quantity</th>
                                 <th>Charge</th>
+                                @if(!auth('admin')->user()->isSupport())
                                 <th>Profit</th>
+                                @endif
                                 <th>Status</th>
                                 <th>Date</th>
                                 <th class="text-end">Actions</th>
@@ -251,12 +257,14 @@
                                     </td>
                                     <td>{{ number_format($orderItem->quantity) }}</td>
                                     <td class="text-success fw-bold">₦{{ number_format($orderItem->charge, 2) }}</td>
+                                    @if(!auth('admin')->user()->isSupport())
                                     <td>
                                         <div class="d-flex flex-column">
                                             <span class="text-primary fw-bold">₦{{ number_format($profit, 2) }}</span>
                                             <small class="text-muted">{{ number_format($profitPercentage, 1) }}%</small>
                                         </div>
                                     </td>
+                                    @endif
                                     <td>
                                         @if($orderItem->status == 'completed')
                                             <span class="badge bg-soft-success text-success">Completed</span>
