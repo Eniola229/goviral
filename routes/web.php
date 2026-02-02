@@ -6,6 +6,7 @@ use App\Http\Controllers\WalletController;
 use App\Http\Controllers\DashboardController; 
 use App\Http\Controllers\OrderController; 
 use App\Http\Controllers\SupportController; 
+use App\Http\Controllers\ReferralController; 
 
 
 Route::get('/', function () {
@@ -57,6 +58,13 @@ Route::middleware('auth')->group(function () {
         
         // AJAX route for fetching messages
         Route::get('/{id}/fetch-messages', [SupportController::class, 'fetchMessages'])->name('fetch-messages');
+    });
+
+    Route::prefix('referral')->name('referral.')->group(function () {
+        Route::get('/', [ReferralController::class, 'index'])->name('index');
+        Route::get('/withdraw', [ReferralController::class, 'withdraw'])->name('withdraw');
+        Route::post('/withdraw/wallet', [ReferralController::class, 'withdrawToWallet'])->name('withdraw.wallet');
+        Route::post('/withdraw/bank', [ReferralController::class, 'withdrawToBank'])->name('withdraw.bank');
     });
 
     // Profile & Settings

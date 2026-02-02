@@ -66,6 +66,9 @@ class WalletService
             // Update User Balance
             $user->increment('balance', $amount);
             
+            // MARK REFERRAL DEPOSIT
+            \App\Services\ReferralService::markDeposit($user);
+            
             return true;
         });
     }
@@ -152,6 +155,42 @@ class WalletService
             return [
                 'success' => true,
                 'reference' => $refundReference,
+                'amount' => $amount,
+                'new_balance' => $balanceAfter
+            ];
+        });
+    }
+
+    // Referral Withdrawal to Wallet (Admin Approved)
+    public static function referralWithdrawalToWallet(User $user, $amount, $reference, $description = 'Referral Withdrawal to Wallet')
+    {
+        return DB::transaction(function () use ($user, $amount, $reference, $description) {
+            
+            // Capture Balance Before
+            $balanceBefore = $user->balance;
+            
+            // Calculate Balance After
+            $balanceAfter = $balanceBefore + $amount;
+
+            // Save the Ledger Entry
+            Wallet::create([
+                'user_id' => $user->id,
+                'balance_before' => $balanceBefore,
+                'amount' => $amount,
+                'balance_after' => $balanceAfter,
+                'type' => 'credit',
+                'description' => $description,
+                'reference' => $reference,
+                'payment_method' => 'Referral Withdrawal',
+                'status' => 'success'
+            ]);
+
+            // Update User Balance
+            $user->increment('balance', $amount);
+            
+            return [
+                'success' => true,
+                'reference' => $reference,
                 'amount' => $amount,
                 'new_balance' => $balanceAfter
             ];

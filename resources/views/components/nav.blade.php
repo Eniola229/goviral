@@ -49,6 +49,18 @@
                     </ul>
                 </li>
 
+                <!-- Referer Menu -->
+                <li class="nxl-item nxl-hasmenu">
+                    <a href="javascript:void(0);" class="nxl-link">
+                       <span class="nxl-micon"><i class="feather-gift"></i></span>
+                        <span class="nxl-mtext">Referral</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item"><a class="nxl-link" href="{{ route('referral.index') }}">Referral Dashboard</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{{ route('referral.withdraw') }}">Withdraw Earnings</a></li>
+                    </ul>
+                </li>
+
                 <!-- Support Menu -->
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">

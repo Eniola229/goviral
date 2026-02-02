@@ -33,6 +33,7 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'referral_code' => ['nullable', 'string', 'exists:referrals,referral_code'],
         ]);
 
         $user = User::create([
@@ -40,6 +41,11 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        // Handle referral code if provided
+        if ($request->referral_code) {
+            \App\Services\ReferralService::recordReferral($request->referral_code, $user);
+        }
 
         event(new Registered($user));
 

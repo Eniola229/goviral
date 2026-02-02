@@ -262,6 +262,9 @@ class OrderController extends Controller
                     \Log::error('Failed to send order notification: ' . $e->getMessage());
                 }
 
+                // MARK REFERRAL ORDER
+                \App\Services\ReferralService::markOrder($user);
+
                 return redirect()->route('orders.index')->with('alert', [
                     'type' => 'success',
                     'message' => 'Order placed successfully! Order ID: ' . $apiResponse['order']

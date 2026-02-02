@@ -52,4 +52,28 @@ class User extends Authenticatable
         $this->notify(new ResetPasswordNotification($token));
     }
 
+    /**
+     * Get the user's referral (as a referrer)
+     */
+    public function referral()
+    {
+        return $this->hasOne(Referral::class);
+    }
+
+    /**
+     * Get users this user has referred
+     */
+    public function referredUsers()
+    {
+        return $this->hasMany(ReferredUser::class, 'referrer_id');
+    }
+
+    /**
+     * Get the referrer who referred this user
+     */
+    public function referredBy()
+    {
+        return $this->hasOne(ReferredUser::class, 'referred_user_id');
+    }
+
 }

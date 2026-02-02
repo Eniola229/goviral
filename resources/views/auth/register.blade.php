@@ -22,6 +22,7 @@
                         
                         <!-- Name -->
                         <div class="mb-4">
+                            <label for="name" class="form-label">Name</label>
                             <input
                                 id="name"
                                 type="text"
@@ -43,6 +44,7 @@
                         
                         <!-- Email Address -->
                         <div class="mb-4">
+                            <label for="email" class="form-label">Email</label>
                             <input
                                 id="email"
                                 type="email"
@@ -61,8 +63,23 @@
                             @enderror
                         </div>
                         
+                        <!-- Referral Code (Optional) -->
+                        <div class="mb-4">
+                            <label for="referral_code" class="form-label">Referral Code (Optional)</label>
+                            <input id="referral_code" 
+                                   type="text" 
+                                   class="form-control @error('referral_code') is-invalid @enderror" 
+                                   name="referral_code" 
+                                   placeholder="Enter referral code if you have one"
+                                   value="{{ old('referral_code', request('ref')) }}">
+                            @error('referral_code')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Have a referral code? Enter it here to connect with your referrer!</small>
+                        </div>
                         <!-- Password -->
                         <div class="mb-4">
+                            <label for="password" class="form-label">Password</label>
                             <input
                                 id="password"
                                 type="password"
@@ -82,6 +99,7 @@
                         
                         <!-- Confirm Password -->
                         <div class="mb-4">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
                             <input
                                 id="password_confirmation"
                                 type="password"

@@ -63,12 +63,6 @@ class KorapayService
                 'ip_address' => request()->ip(),
             ]);
 
-            // \Log::info('Korapay Initialize Request', [
-            //     'reference' => $reference,
-            //     'amount' => $amount,
-            //     'redirect_url' => $redirectUrl
-            // ]);
-
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->secretKey,
                 'Content-Type' => 'application/json',
@@ -269,6 +263,187 @@ class KorapayService
         } catch (\Exception $e) {
             \Log::error('Korapay webhook signature verification failed: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Initiate payout/transfer to bank account
+     */
+    public function initiatePayout($amount, $bankName, $accountNumber, $accountName, $reference, $narration = 'Withdrawal')
+    {
+        try {
+            if (empty($this->secretKey)) {
+                return [
+                    'success' => false,
+                    'message' => 'Payment gateway not configured. Please contact support.'
+                ];
+            }
+
+            $bankCode = $this->getBankCode($bankName);
+            
+            if ($bankCode === '000') {
+                \Log::warning("Unknown bank name provided: {$bankName}");
+            }
+
+            // Korapay payout payload
+            $payload = [
+                'reference' => $reference,
+                'destination' => [
+                    'type' => 'bank_account',
+                    'amount' => (int)$amount, // Amount in kobo
+                    'currency' => $this->currency,
+                    'narration' => $narration,
+                    'bank_account' => [
+                        'bank' => $bankCode,
+                        'account' => $accountNumber,
+                    ],
+                    'customer' => [
+                        'name' => $accountName,
+                    ]
+                ]
+            ];
+
+            \Log::info('Korapay Payout Request', [
+                'reference' => $reference,
+                'amount' => $amount,
+                'bank_name' => $bankName,
+                'bank_code' => $bankCode,
+                'account_number' => $accountNumber
+            ]);
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->secretKey,
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl . '/api/v1/disbursements', $payload);
+
+            $responseData = $response->json();
+
+            \Log::info('Korapay Payout Response', $responseData);
+
+            if ($response->successful() && isset($responseData['status']) && $responseData['status'] === true) {
+                return [
+                    'success' => true,
+                    'transfer_id' => $responseData['data']['reference'] ?? null,
+                    'message' => 'Payout initiated successfully'
+                ];
+            }
+
+            $errorMessage = $responseData['message'] ?? 'Payout failed';
+
+            return [
+                'success' => false,
+                'message' => $errorMessage
+            ];
+
+        } catch (\Exception $e) {
+            \Log::error('Korapay Payout Exception', [
+                'message' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Map bank name to Korapay bank code
+     * Tries to fetch from API first, falls back to hardcoded list
+     */
+    protected function getBankCode($bankName)
+    {
+        // Try to get bank code from API
+        try {
+            $banksResponse = $this->getBanks();
+            
+            if (isset($banksResponse['status']) && $banksResponse['status'] === true && isset($banksResponse['data'])) {
+                foreach ($banksResponse['data'] as $bank) {
+                    if (strcasecmp($bank['name'], $bankName) === 0) {
+                        return $bank['code'];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch bank code from API, using fallback: ' . $e->getMessage());
+        }
+
+        // Fallback to hardcoded bank codes
+        $bankCodes = [
+            'Access Bank' => '044',
+            'GTBank' => '058',
+            'Guaranty Trust Bank' => '058',
+            'First Bank' => '011',
+            'First Bank of Nigeria' => '011',
+            'UBA' => '033',
+            'United Bank for Africa' => '033',
+            'Zenith Bank' => '057',
+            'Fidelity Bank' => '070',
+            'Union Bank' => '032',
+            'Union Bank of Nigeria' => '032',
+            'Stanbic IBTC' => '221',
+            'Stanbic IBTC Bank' => '221',
+            'Sterling Bank' => '232',
+            'Polaris Bank' => '076',
+            'Wema Bank' => '035',
+            'Keystone Bank' => '082',
+            'FCMB' => '214',
+            'First City Monument Bank' => '214',
+            'Ecobank' => '050',
+            'Ecobank Nigeria' => '050',
+            'Heritage Bank' => '030',
+            'Jaiz Bank' => '301',
+            'Providus Bank' => '101',
+            'Kuda Bank' => '50211',
+            'Kuda' => '50211',
+            'OPay' => '100004',
+            'Opay Digital Services Limited' => '100004',
+            'PalmPay' => '100033',
+            'Moniepoint' => '50515',
+            'Moniepoint Microfinance Bank' => '50515',
+            'VFD Microfinance Bank' => '566',
+            'Globus Bank' => '00103',
+            'Parallex Bank' => '526',
+            'Premium Trust Bank' => '105',
+            'Titan Trust Bank' => '102',
+            'SunTrust Bank' => '100',
+        ];
+
+        // Try exact match first
+        if (isset($bankCodes[$bankName])) {
+            return $bankCodes[$bankName];
+        }
+
+        // Try case-insensitive match
+        foreach ($bankCodes as $name => $code) {
+            if (strcasecmp($name, $bankName) === 0) {
+                return $code;
+            }
+        }
+
+        \Log::warning("Bank code not found for: {$bankName}");
+        return '000'; // Default/unknown bank code
+    }
+
+    /**
+     * Get list of banks from Korapay
+     */
+    public function getBanks()
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->secretKey,
+                'Content-Type' => 'application/json',
+            ])->get($this->baseUrl . '/api/v1/misc/banks?countryCode=NG');
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            return [];
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch banks: ' . $e->getMessage());
+            return [];
         }
     }
 }

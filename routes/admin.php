@@ -100,6 +100,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // Update password
             Route::put('/update-password', [ProfileController::class, 'updatePassword'])->name('update-password');
         });
+
+        Route::prefix('withdrawals')->name('withdrawals.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\ReferralWithdrawalController::class, 'index'])->name('index');
+            Route::get('/{id}', [App\Http\Controllers\Admin\ReferralWithdrawalController::class, 'show'])->name('show');
+            Route::post('/{id}/approve-wallet', [App\Http\Controllers\Admin\ReferralWithdrawalController::class, 'approveWallet'])->name('approve-wallet');
+            Route::post('/{id}/approve-bank', [App\Http\Controllers\Admin\ReferralWithdrawalController::class, 'approveBank'])->name('approve-bank');
+            Route::post('/{id}/reject', [App\Http\Controllers\Admin\ReferralWithdrawalController::class, 'reject'])->name('reject');
+        });
         
     });
 });
