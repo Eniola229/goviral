@@ -7,6 +7,7 @@ use App\Services\ReferralService;
 use App\Services\KorapayService;
 use App\Models\ReferredUser;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ReferralController extends Controller
 {
@@ -88,15 +89,8 @@ class ReferralController extends Controller
         if (!$referral) {
             return redirect()->route('referral.index');
         }
-
         // Fetch banks from Korapay
-        $banksResponse = $this->korapayService->getBanks();
-        $banks = [];
-        
-        if (isset($banksResponse['status']) && $banksResponse['status'] === true && isset($banksResponse['data'])) {
-            $banks = $banksResponse['data'];
-        }
-
+        $banks = $this->korapayService->getBanks();
         return view('referral.withdraw', compact('referral', 'banks'));
     }
 
@@ -111,7 +105,7 @@ class ReferralController extends Controller
         ]);
         
         // Get user's referral balance
-        $referral = Auth::user()->referral; // Assuming the relationship exists
+        $referral = Auth::user()->referral;
         
         if (!$referral || $referral->referral_balance < $request->amount) {
             return back()->with('alert', [
@@ -121,15 +115,25 @@ class ReferralController extends Controller
         }
         
         try {
+            DB::beginTransaction();
+            
+            // Deduct from referral balance immediately
+            $referral->referral_balance -= $request->amount;
+            $referral->save();
+            
             $withdrawal = ReferralService::withdrawToWallet(Auth::user(), $request->amount);
+            
+            DB::commit();
+            
             return redirect()->route('referral.index')->with('alert', [
                 'type' => 'success',
-                'message' => 'Withdrawal request submitted! Awaiting admin approval. Reference: ' . $withdrawal->reference
+                'message' => 'Withdrawal request submitted! ₦' . number_format($request->amount, 2) . ' has been deducted from your referral balance. Awaiting admin approval. Reference: ' . $withdrawal->reference
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->with('alert', [
                 'type' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Something seems wrong'
             ]);
         }
     }
@@ -157,6 +161,12 @@ class ReferralController extends Controller
         }
         
         try {
+            DB::beginTransaction();
+            
+            // Deduct from referral balance immediately
+            $referral->referral_balance -= $request->amount;
+            $referral->save();
+            
             $withdrawal = ReferralService::withdrawToBank(
                 Auth::user(),
                 $request->amount,
@@ -164,14 +174,18 @@ class ReferralController extends Controller
                 $request->account_number,
                 $request->account_name
             );
+            
+            DB::commit();
+            
             return redirect()->route('referral.index')->with('alert', [
                 'type' => 'success',
-                'message' => 'Bank withdrawal request submitted! Awaiting admin approval. Reference: ' . $withdrawal->reference
+                'message' => 'Bank withdrawal request submitted! ₦' . number_format($request->amount, 2) . ' has been deducted from your referral balance. Awaiting admin approval. Reference: ' . $withdrawal->reference
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->with('alert', [
                 'type' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Something seems wrong'
             ]);
         }
     }

@@ -33,7 +33,7 @@ class AuthenticatedSessionController extends Controller
             try {
                 // Send login notification
                 $user->notify(new UserLoggedIn($user));
-                Log::info('Login notification sent for user: ' . $user->id);
+                //Log::info('Login notification sent for user: ' . $user->id);
             } catch (\Exception $e) {
                 // Log error but don't break the login flow
                 Log::error('Failed to send login notification: ' . $e->getMessage());

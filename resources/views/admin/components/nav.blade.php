@@ -47,6 +47,16 @@
                     </a>
                 </li>
 
+                <!-- Refreral -->
+                @if(auth('admin')->user()->canManageReferral())
+                <li class="nxl-item">
+                    <a href="{{ route('admin.referral.withdrawals.index') }}" class="nxl-link {{ request()->routeIs('admin.wallet.*') ? 'active' : '' }}">
+                        <span class="nxl-micon"><i class="feather-gift"></i></span>
+                        <span class="nxl-mtext">Referral</span>
+                    </a>
+                </li>
+                @endif
+
                 <!-- Support Tickets -->
                 <li class="nxl-item">
                     <a href="{{ route('admin.support.index') }}" class="nxl-link {{ request()->routeIs('admin.support.*') ? 'active' : '' }}">

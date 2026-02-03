@@ -269,7 +269,7 @@ class KorapayService
     /**
      * Initiate payout/transfer to bank account
      */
-    public function initiatePayout($amount, $bankName, $accountNumber, $accountName, $reference, $narration = 'Withdrawal')
+    public function initiatePayout($amount, $bankName, $accountNumber, $accountName, $reference, $narration = 'Withdrawal', $customerEmail = '')
     {
         try {
             if (empty($this->secretKey)) {
@@ -280,69 +280,64 @@ class KorapayService
             }
 
             $bankCode = $this->getBankCode($bankName);
-            
+
             if ($bankCode === '000') {
                 \Log::warning("Unknown bank name provided: {$bankName}");
             }
 
-            // Korapay payout payload
+            // Korapay payout payload — amount in Naira (2 decimal places), NOT kobo
             $payload = [
                 'reference' => $reference,
                 'destination' => [
-                    'type' => 'bank_account',
-                    'amount' => (int)$amount, // Amount in kobo
-                    'currency' => $this->currency,
-                    'narration' => $narration,
+                    'type'        => 'bank_account',
+                    'amount'      => number_format((float)$amount, 2, '.', ''),  // e.g. "5000.00"
+                    'currency'    => $this->currency,
+                    'narration'   => $narration,
                     'bank_account' => [
-                        'bank' => $bankCode,
+                        'bank'    => $bankCode,
                         'account' => $accountNumber,
                     ],
                     'customer' => [
-                        'name' => $accountName,
-                    ]
-                ]
+                        'name'  => $accountName,
+                        'email' => $customerEmail,  // REQUIRED by Korapay
+                    ],
+                ],
             ];
 
             \Log::info('Korapay Payout Request', [
-                'reference' => $reference,
-                'amount' => $amount,
-                'bank_name' => $bankName,
-                'bank_code' => $bankCode,
-                'account_number' => $accountNumber
+                'reference'      => $reference,
+                'amount'         => $amount,
+                'bank_name'      => $bankName,
+                'bank_code'      => $bankCode,
+                'account_number' => $accountNumber,
             ]);
 
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->secretKey,
-                'Content-Type' => 'application/json',
-            ])->post($this->baseUrl . '/api/v1/disbursements', $payload);
+                'Content-Type'  => 'application/json',
+            ])->post($this->baseUrl . '/api/v1/transactions/disburse', $payload);
 
             $responseData = $response->json();
-
             \Log::info('Korapay Payout Response', $responseData);
 
             if ($response->successful() && isset($responseData['status']) && $responseData['status'] === true) {
                 return [
-                    'success' => true,
+                    'success'    => true,
                     'transfer_id' => $responseData['data']['reference'] ?? null,
-                    'message' => 'Payout initiated successfully'
+                    'message'    => 'Payout initiated successfully',
                 ];
             }
 
-            $errorMessage = $responseData['message'] ?? 'Payout failed';
-
             return [
                 'success' => false,
-                'message' => $errorMessage
+                'message' => $responseData['message'] ?? 'Payout failed',
             ];
 
         } catch (\Exception $e) {
-            \Log::error('Korapay Payout Exception', [
-                'message' => $e->getMessage()
-            ]);
-
+            \Log::error('Korapay Payout Exception', ['message' => $e->getMessage()]);
             return [
                 'success' => false,
-                'message' => 'An error occurred: ' . $e->getMessage()
+                'message' => 'An error occurred: ' . $e->getMessage(),
             ];
         }
     }
@@ -428,22 +423,46 @@ class KorapayService
     /**
      * Get list of banks from Korapay
      */
-    public function getBanks()
-    {
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->secretKey,
-                'Content-Type' => 'application/json',
-            ])->get($this->baseUrl . '/api/v1/misc/banks?countryCode=NG');
-
-            if ($response->successful()) {
-                return $response->json();
-            }
-
-            return [];
-        } catch (\Exception $e) {
-            \Log::error('Failed to fetch banks: ' . $e->getMessage());
-            return [];
+public function getBanks($countryCode = 'NG')
+{
+    try {
+        $url = $this->baseUrl . '/api/v1/misc/banks?countryCode=' . $countryCode;
+        
+        // \Log::info('Korapay Get Banks Request', [
+        //     'url' => $url,
+        //     'country_code' => $countryCode,
+        //     'using_key' => 'public_key'
+        // ]);
+        
+        // Use PUBLIC KEY instead of SECRET KEY
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->publicKey,  // Changed from secretKey to publicKey
+            'Content-Type' => 'application/json',
+        ])->get($url);
+        
+        // \Log::info('Korapay Get Banks Response', [
+        //     'status_code' => $response->status(),
+        //     'body' => $response->json(),
+        //     'country_code' => $countryCode
+        // ]);
+        
+        if ($response->successful()) {
+            return $response->json();
         }
+        
+        // \Log::warning('Korapay Get Banks Failed', [
+        //     'status_code' => $response->status(),
+        //     'body' => $response->body(),
+        //     'country_code' => $countryCode
+        // ]);
+        
+        return [];
+    } catch (\Exception $e) {
+        \Log::error('Failed to fetch banks: ' . $e->getMessage(), [
+            'country_code' => $countryCode,
+            'exception' => $e->getTraceAsString()
+        ]);
+        return [];
     }
+}
 }

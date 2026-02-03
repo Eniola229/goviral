@@ -130,6 +130,11 @@ class Admin extends Authenticatable
         return $this->isSuperAdmin() || $this->isAccountant() || isSupport() || isHR() || isAdmin() || isManager();
     }
 
+    public function canManageReferral(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAccountant() || isAdmin() || isManager();
+    }
+
     public function logs()
     {
         return $this->hasMany(AdminLogged::class);

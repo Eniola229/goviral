@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\ReferralTransaction;
+use App\Models\ReferralWalletTransaction;
 use App\Models\Referral;
 use App\Models\User;
+use App\Models\AdminLogged;
+use App\Models\Logged;
 use App\Services\KorapayService;
 use App\Traits\LogsAdminActivity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\WalletService;
 
 class ReferralWithdrawalController extends Controller
 {
@@ -29,25 +32,76 @@ class ReferralWithdrawalController extends Controller
     public function index(Request $request)
     {
         $status = $request->get('status', 'pending');
-        
-        $query = ReferralTransaction::with(['referral.user'])
+        $search = $request->get('search', '');
+        $filterMethod = $request->get('method', '');
+        $amountMin = $request->get('amount_min', '');
+        $amountMax = $request->get('amount_max', '');
+        $dateFrom = $request->get('date_from', '');
+        $dateTo = $request->get('date_to', '');
+
+        $query = ReferralWalletTransaction::with(['referral.user'])
             ->where('type', 'debit')
-            ->whereIn('status', ['pending', 'approved', 'failed', 'success']);
+            ->whereIn('status', ['pending', 'approved', 'declined', 'success']);
 
         if ($status !== 'all') {
             $query->where('status', $status);
         }
 
-        $withdrawals = $query->latest()->paginate(20)->appends(['status' => $status]);
+        // Search by name, email, reference, account name, or bank name
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('reference', 'LIKE', "%{$search}%")
+                  ->orWhere('account_name', 'LIKE', "%{$search}%")
+                  ->orWhere('bank_name', 'LIKE', "%{$search}%")
+                  ->orWhereHas('referral.user', function ($userQuery) use ($search) {
+                      $userQuery->where('name', 'LIKE', "%{$search}%")
+                                ->orWhere('email', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter by withdrawal method (bank or wallet)
+        if (!empty($filterMethod)) {
+            $query->where('withdrawal_method', $filterMethod);
+        }
+
+        // Filter by amount range
+        if (!empty($amountMin)) {
+            $query->where('amount', '>=', $amountMin);
+        }
+        if (!empty($amountMax)) {
+            $query->where('amount', '<=', $amountMax);
+        }
+
+        // Filter by date range
+        if (!empty($dateFrom)) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if (!empty($dateTo)) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        $withdrawals = $query->latest()->paginate(20)->appends([
+            'status'      => $status,
+            'search'      => $search,
+            'method'      => $filterMethod,
+            'amount_min'  => $amountMin,
+            'amount_max'  => $amountMax,
+            'date_from'   => $dateFrom,
+            'date_to'     => $dateTo,
+        ]);
 
         $stats = [
-            'pending' => ReferralTransaction::where('type', 'debit')->where('status', 'pending')->count(),
-            'approved' => ReferralTransaction::where('type', 'debit')->where('status', 'approved')->count(),
-            'success' => ReferralTransaction::where('type', 'debit')->where('status', 'success')->count(),
-            'failed' => ReferralTransaction::where('type', 'debit')->where('status', 'failed')->count(),
+            'pending'  => ReferralWalletTransaction::where('type', 'debit')->where('status', 'pending')->count(),
+            'approved' => ReferralWalletTransaction::where('type', 'debit')->where('status', 'approved')->count(),
+            'success'  => ReferralWalletTransaction::where('type', 'debit')->where('status', 'success')->count(),
+            'failed'   => ReferralWalletTransaction::where('type', 'debit')->where('status', 'declined')->count(),
         ];
 
-        return view('admin.referral.withdrawals.index', compact('withdrawals', 'stats', 'status'));
+        return view('admin.referral.withdrawals.index', compact(
+            'withdrawals', 'stats', 'status',
+            'search', 'filterMethod', 'amountMin', 'amountMax', 'dateFrom', 'dateTo'
+        ));
     }
 
     /**
@@ -55,9 +109,42 @@ class ReferralWithdrawalController extends Controller
      */
     public function show($id)
     {
-        $withdrawal = ReferralTransaction::with(['referral.user'])->findOrFail($id);
+        $withdrawal = ReferralWalletTransaction::with(['referral.user'])->findOrFail($id);
         
-        return view('admin.referral.withdrawals.show', compact('withdrawal'));
+        // Get current referral balance
+        $referralBalance = $withdrawal->referral->balance;
+        
+        // Get total transactions count for this referral
+        $totalTransactions = ReferralWalletTransaction::where('referral_id', $withdrawal->referral_id)->count();
+        
+        // Get admin logs related to this withdrawal
+        $adminLogs = AdminLogged::where('target_type', ReferralWalletTransaction::class)
+            ->where('target_id', $withdrawal->id)
+            ->with('admin')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Get user transaction logs related to this withdrawal (by reference)
+        $userLogs = Logged::where('reference', $withdrawal->reference)
+            ->where('user_id', $withdrawal->referral->user_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Merge and sort all logs by created_at
+        $allLogs = $adminLogs->concat($userLogs)->sortByDesc('created_at');
+        
+        // Paginate the merged collection
+        $perPage = 10;
+        $currentPage = request()->get('page', 1);
+        $logs = new \Illuminate\Pagination\LengthAwarePaginator(
+            $allLogs->forPage($currentPage, $perPage),
+            $allLogs->count(),
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+        
+        return view('admin.referral.withdrawals.show', compact('withdrawal', 'referralBalance', 'totalTransactions', 'logs'));
     }
 
     /**
@@ -76,7 +163,7 @@ class ReferralWithdrawalController extends Controller
         try {
             DB::beginTransaction();
             
-            $withdrawal = ReferralTransaction::with(['referral.user'])->findOrFail($id);
+            $withdrawal = ReferralWalletTransaction::with(['referral.user'])->findOrFail($id);
             
             if ($withdrawal->status !== 'pending') {
                 return back()->with('alert', [
@@ -114,7 +201,7 @@ class ReferralWithdrawalController extends Controller
             $this->logActivity(
                 'referral_withdrawal_approved',
                 "Approved wallet withdrawal for user {$user->name} - ₦" . number_format($withdrawal->amount, 2),
-                ReferralTransaction::class,
+                ReferralWalletTransaction::class,
                 $withdrawal->id,
                 [
                     'withdrawal_id' => $withdrawal->id,
@@ -162,7 +249,7 @@ class ReferralWithdrawalController extends Controller
         try {
             DB::beginTransaction();
 
-            $withdrawal = ReferralTransaction::with(['referral.user'])->findOrFail($id);
+            $withdrawal = ReferralWalletTransaction::with(['referral.user'])->findOrFail($id);
 
             if ($withdrawal->status !== 'pending') {
                 return back()->with('alert', [
@@ -171,16 +258,14 @@ class ReferralWithdrawalController extends Controller
                 ]);
             }
 
-            if (!str_contains($withdrawal->description, 'bank')) {
+            if ($withdrawal->withdrawal_method !== 'bank') {
                 return back()->with('alert', [
                     'type' => 'error',
                     'message' => 'This is not a bank withdrawal'
                 ]);
             }
 
-            $metadata = $withdrawal->metadata ?? [];
-            
-            if (!isset($metadata['bank_name'], $metadata['account_number'], $metadata['account_name'])) {
+            if (!$withdrawal->bank_name || !$withdrawal->account_number || !$withdrawal->account_name) {
                 return back()->with('alert', [
                     'type' => 'error',
                     'message' => 'Bank details are missing'
@@ -189,34 +274,31 @@ class ReferralWithdrawalController extends Controller
 
             $user = $withdrawal->referral->user;
 
-            // Convert amount to kobo for Korapay
-            $amountInKobo = $withdrawal->amount * 100;
-
             // Initiate payout via Korapay
+            // Pass amount directly (in Naira) + add the user's email
             $payoutResult = $this->korapayService->initiatePayout(
-                $amountInKobo,
-                $metadata['bank_name'],
-                $metadata['account_number'],
-                $metadata['account_name'],
+                $withdrawal->amount,                          // Naira
+                $withdrawal->bank_name,
+                $withdrawal->account_number,
+                $withdrawal->account_name,
                 $withdrawal->reference,
-                'Referral withdrawal - ' . $user->name
+                'Referral withdrawal - ' . $user->name,
+                $user->email                                  // customer email 
             );
 
             if ($payoutResult['success']) {
                 // Update withdrawal status to approved (awaiting Korapay confirmation)
                 $withdrawal->status = 'approved';
-                $withdrawal->metadata = array_merge($metadata, [
-                    'transfer_id' => $payoutResult['transfer_id'] ?? null,
-                    'approved_at' => now()->toDateTimeString(),
-                    'approved_by' => Auth::guard('admin')->user()->name,
-                ]);
+                $withdrawal->approved_at = now();
+                $withdrawal->approved_by = Auth::guard('admin')->id();
+                $withdrawal->admin_note = 'Transfer initiated. Transfer ID: ' . ($payoutResult['transfer_id'] ?? 'N/A');
                 $withdrawal->save();
 
                 // Log admin action using trait
                 $this->logActivity(
                     'referral_withdrawal_approved',
                     "Approved bank withdrawal for user {$user->name} - ₦" . number_format($withdrawal->amount, 2),
-                    ReferralTransaction::class,
+                    ReferralWalletTransaction::class,
                     $withdrawal->id,
                     [
                         'withdrawal_id' => $withdrawal->id,
@@ -225,9 +307,9 @@ class ReferralWithdrawalController extends Controller
                         'user_name' => $user->name,
                         'amount' => $withdrawal->amount,
                         'type' => 'bank',
-                        'bank_name' => $metadata['bank_name'],
-                        'account_number' => $metadata['account_number'],
-                        'account_name' => $metadata['account_name'],
+                        'bank_name' => $withdrawal->bank_name,
+                        'account_number' => $withdrawal->account_number,
+                        'account_name' => $withdrawal->account_name,
                         'old_status' => 'pending',
                         'new_status' => 'approved',
                         'transfer_id' => $payoutResult['transfer_id'] ?? null,
@@ -248,7 +330,7 @@ class ReferralWithdrawalController extends Controller
                 $this->logActivity(
                     'referral_withdrawal_failed',
                     "Failed to process bank withdrawal for user {$user->name} - ₦" . number_format($withdrawal->amount, 2),
-                    ReferralTransaction::class,
+                    ReferralWalletTransaction::class,
                     $withdrawal->id,
                     [
                         'withdrawal_id' => $withdrawal->id,
@@ -271,7 +353,7 @@ class ReferralWithdrawalController extends Controller
 
             return back()->with('alert', [
                 'type' => 'error',
-                'message' => 'Failed to approve withdrawal: ' . $e->getMessage()
+                'message' => 'Failed to approve withdrawal'
             ]);
         }
     }
@@ -296,7 +378,7 @@ class ReferralWithdrawalController extends Controller
         try {
             DB::beginTransaction();
 
-            $withdrawal = ReferralTransaction::with(['referral.user'])->findOrFail($id);
+            $withdrawal = ReferralWalletTransaction::with(['referral.user'])->findOrFail($id);
 
             if ($withdrawal->status !== 'pending') {
                 return back()->with('alert', [
@@ -313,19 +395,17 @@ class ReferralWithdrawalController extends Controller
             $withdrawal->referral->save();
 
             // Update withdrawal status
-            $withdrawal->status = 'failed';
-            $withdrawal->metadata = array_merge($withdrawal->metadata ?? [], [
-                'rejection_reason' => $request->reason,
-                'rejected_at' => now()->toDateTimeString(),
-                'rejected_by' => Auth::guard('admin')->user()->name,
-            ]);
+            $withdrawal->status = 'declined';
+            $withdrawal->approved_by = Auth::guard('admin')->id();
+            $withdrawal->approved_at = now();
+            $withdrawal->admin_note = 'Rejected: ' . $request->reason;
             $withdrawal->save();
 
             // Log admin action using trait
             $this->logActivity(
                 'referral_withdrawal_rejected',
                 "Rejected withdrawal for user {$user->name} - ₦" . number_format($amount, 2),
-                ReferralTransaction::class,
+                ReferralWalletTransaction::class,
                 $withdrawal->id,
                 [
                     'withdrawal_id' => $withdrawal->id,
@@ -353,7 +433,7 @@ class ReferralWithdrawalController extends Controller
 
             return back()->with('alert', [
                 'type' => 'error',
-                'message' => 'Failed to reject withdrawal: ' . $e->getMessage()
+                'message' => 'Failed to reject withdrawal'
             ]);
         }
     }

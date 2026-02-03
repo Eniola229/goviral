@@ -1,6 +1,62 @@
 @include('components.g-header')
 @include('components.nav')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+/* Enhanced select with search */
+.bank-select-wrapper {
+    position: relative;
+}
 
+.bank-search-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+}
+
+.bank-options-list {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    display: none;
+    position: absolute;
+    background: white;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.bank-option {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.bank-option:hover {
+    background-color: #f8f9fa;
+}
+
+.bank-option:last-child {
+    border-bottom: none;
+}
+
+.selected-bank-display {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background: white;
+    cursor: pointer;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+.selected-bank-display:hover {
+    border-color: #86b7fe;
+}
+</style>
 <main class="nxl-container">
     <div class="nxl-content">
         <div class="page-header">
@@ -118,7 +174,7 @@
                                                 <span class="input-group-text">₦</span>
                                                 <input type="number" name="amount" class="form-control" 
                                                        placeholder="Enter amount" 
-                                                       min="1000" 
+                                                       min="100" 
                                                        max="{{ $referral->referral_balance }}"
                                                        step="0.01" 
                                                        required>
@@ -128,45 +184,59 @@
                                             @enderror
                                             <small class="text-muted">Minimum: ₦1000 | Available: ₦{{ number_format($referral->referral_balance, 2) }}</small>
                                         </div>
-
                                         <div class="mb-3">
                                             <label class="form-label fw-bold">Select Bank</label>
-                                            <select name="bank_name" class="form-select" id="bankSelect" required>
-                                                <option value="">-- Select Your Bank --</option>
-                                                @if(!empty($banks) && isset($banks['data']))
-                                                    @foreach($banks['data'] as $bank)
-                                                        <option value="{{ $bank['name'] }}" data-code="{{ $bank['code'] }}">
-                                                            {{ $bank['name'] }}
-                                                        </option>
-                                                    @endforeach
-                                                @else
-                                                    <!-- Fallback banks if API fails -->
-                                                    <option value="Access Bank">Access Bank</option>
-                                                    <option value="GTBank">GTBank</option>
-                                                    <option value="First Bank">First Bank</option>
-                                                    <option value="UBA">UBA</option>
-                                                    <option value="Zenith Bank">Zenith Bank</option>
-                                                    <option value="Fidelity Bank">Fidelity Bank</option>
-                                                    <option value="Union Bank">Union Bank</option>
-                                                    <option value="Stanbic IBTC">Stanbic IBTC</option>
-                                                    <option value="Sterling Bank">Sterling Bank</option>
-                                                    <option value="Polaris Bank">Polaris Bank</option>
-                                                    <option value="Wema Bank">Wema Bank</option>
-                                                    <option value="Keystone Bank">Keystone Bank</option>
-                                                    <option value="FCMB">FCMB</option>
-                                                    <option value="Ecobank">Ecobank</option>
-                                                    <option value="Heritage Bank">Heritage Bank</option>
-                                                    <option value="Jaiz Bank">Jaiz Bank</option>
-                                                    <option value="Providus Bank">Providus Bank</option>
-                                                    <option value="Kuda Bank">Kuda Bank</option>
-                                                    <option value="OPay">OPay</option>
-                                                @endif
-                                            </select>
+                                            <div class="bank-select-wrapper">
+                                                <!-- Hidden input that will store the actual bank name -->
+                                                <input type="hidden" name="bank_name" id="bankNameInput" required>
+                                                
+                                                <!-- Search input -->
+                                                <input type="text" 
+                                                       class="form-control" 
+                                                       id="bankSearchInput" 
+                                                       placeholder="Type to search for your bank..."
+                                                       autocomplete="off">
+                                                
+                                                <!-- Banks dropdown list -->
+                                                <div class="bank-options-list" id="bankOptionsList">
+                                                    @if(!empty($banks) && isset($banks['data']))
+                                                        @foreach($banks['data'] as $bank)
+                                                            <div class="bank-option" 
+                                                                 data-bank-name="{{ $bank['name'] }}" 
+                                                                 data-bank-code="{{ $bank['code'] }}"
+                                                                 data-bank-slug="{{ $bank['slug'] }}">
+                                                                {{ $bank['name'] }}
+                                                            </div>
+                                                        @endforeach
+                                                    @else
+                                                        <!-- Fallback banks if API fails -->
+                                                        <div class="bank-option" data-bank-name="Access Bank">Access Bank</div>
+                                                        <div class="bank-option" data-bank-name="GTBank">GTBank</div>
+                                                        <div class="bank-option" data-bank-name="First Bank">First Bank</div>
+                                                        <div class="bank-option" data-bank-name="UBA">UBA</div>
+                                                        <div class="bank-option" data-bank-name="Zenith Bank">Zenith Bank</div>
+                                                        <div class="bank-option" data-bank-name="Fidelity Bank">Fidelity Bank</div>
+                                                        <div class="bank-option" data-bank-name="Union Bank">Union Bank</div>
+                                                        <div class="bank-option" data-bank-name="Stanbic IBTC">Stanbic IBTC</div>
+                                                        <div class="bank-option" data-bank-name="Sterling Bank">Sterling Bank</div>
+                                                        <div class="bank-option" data-bank-name="Polaris Bank">Polaris Bank</div>
+                                                        <div class="bank-option" data-bank-name="Wema Bank">Wema Bank</div>
+                                                        <div class="bank-option" data-bank-name="Keystone Bank">Keystone Bank</div>
+                                                        <div class="bank-option" data-bank-name="FCMB">FCMB</div>
+                                                        <div class="bank-option" data-bank-name="Ecobank">Ecobank</div>
+                                                        <div class="bank-option" data-bank-name="Heritage Bank">Heritage Bank</div>
+                                                        <div class="bank-option" data-bank-name="Jaiz Bank">Jaiz Bank</div>
+                                                        <div class="bank-option" data-bank-name="Providus Bank">Providus Bank</div>
+                                                        <div class="bank-option" data-bank-name="Kuda Bank">Kuda Bank</div>
+                                                        <div class="bank-option" data-bank-name="OPay">OPay</div>
+                                                    @endif
+                                                </div>
+                                            </div>
                                             @error('bank_name')
                                                 <small class="text-danger">{{ $message }}</small>
                                             @enderror
+                                            <small class="text-muted">Start typing to search for your bank</small>
                                         </div>
-
                                         <div class="mb-3">
                                             <label class="form-label fw-bold">Account Number</label>
                                             <input type="text" name="account_number" class="form-control" 
@@ -282,11 +352,59 @@
     </div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+// Bank search functionality
+const bankSearchInput = document.getElementById('bankSearchInput');
+const bankNameInput = document.getElementById('bankNameInput');
+const bankOptionsList = document.getElementById('bankOptionsList');
+const bankOptions = document.querySelectorAll('.bank-option');
+
+// Show dropdown when input is focused
+bankSearchInput.addEventListener('focus', function() {
+    bankOptionsList.style.display = 'block';
+});
+
+// Filter banks as user types
+bankSearchInput.addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    let hasVisibleOptions = false;
+    
+    bankOptions.forEach(option => {
+        const bankName = option.getAttribute('data-bank-name').toLowerCase();
+        if (bankName.includes(searchTerm)) {
+            option.style.display = 'block';
+            hasVisibleOptions = true;
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    bankOptionsList.style.display = hasVisibleOptions ? 'block' : 'none';
+});
+
+// Select bank when clicked
+bankOptions.forEach(option => {
+    option.addEventListener('click', function() {
+        const bankName = this.getAttribute('data-bank-name');
+        bankSearchInput.value = bankName;
+        bankNameInput.value = bankName;
+        bankOptionsList.style.display = 'none';
+    });
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.bank-select-wrapper')) {
+        bankOptionsList.style.display = 'none';
+    }
+});
+
+// Form validation
 document.getElementById('bankWithdrawalForm')?.addEventListener('submit', function(e) {
     const accountNumber = document.getElementById('accountNumber').value;
     const accountName = document.getElementById('accountName').value;
-    const bankName = document.getElementById('bankSelect').value;
+    const bankName = document.getElementById('bankNameInput').value;
     
     if (accountNumber.length !== 10) {
         e.preventDefault();

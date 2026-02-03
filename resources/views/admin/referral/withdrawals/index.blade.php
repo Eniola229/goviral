@@ -1,6 +1,11 @@
-@extends('admin.layouts.app')
+@include('components.g-header')
+@include('admin.components.nav')
+@include('admin.components.header')
 
-@section('content')
+
+<main class="nxl-container p-2">
+    <div class="nxl-content">
+
 <div class="page-header">
     <div class="page-header-left d-flex align-items-center">
         <div class="page-header-title">
@@ -14,15 +19,31 @@
 </div>
 
 @if(session('alert'))
-    <div class="alert alert-{{ session('alert.type') }} alert-dismissible fade show">
-        <i class="feather-{{ session('alert.type') == 'success' ? 'check-circle' : 'alert-circle' }} me-2"></i>
+    @php
+        $alertType = session('alert.type');
+        $bgClass   = match($alertType) {
+            'success' => 'success',
+            'error'   => 'danger',
+            'warning' => 'warning',
+            default   => 'info',
+        };
+        $icon = match($alertType) {
+            'success' => 'check-circle',
+            'error'   => 'x-circle',
+            'warning' => 'alert-triangle',
+            default   => 'info',
+        };
+    @endphp
+
+    <div class="alert alert-{{ $bgClass }} alert-dismissible fade show">
+        <i class="feather-{{ $icon }} me-2"></i>
         {{ session('alert.message') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+    @endif  
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
+<div class="row mb-4 mt-3">
     <div class="col-md-3">
         <div class="card">
             <div class="card-body">
@@ -85,32 +106,117 @@
     </div>
 </div>
 
+<!-- Search & Filter Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ route('admin.referral.withdrawals.index') }}" class="row g-3 align-items-end" id="filterForm">
+            <!-- Preserve active status tab -->
+            <input type="hidden" name="status" value="{{ $status }}">
+
+            <!-- Search Input -->
+            <div class="col-md-4">
+                <label class="form-label fw-semibold text-muted small mb-1">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="feather-search text-muted"></i>
+                    </span>
+                    <input type="text"
+                           name="search"
+                           class="form-control border-start-0"
+                           placeholder="Name, email, reference..."
+                           value="{{ $search ?? '' }}">
+                </div>
+            </div>
+
+            <!-- Withdrawal Method Filter -->
+            <div class="col-md-2">
+                <label class="form-label fw-semibold text-muted small mb-1">Method</label>
+                <select name="method" class="form-select">
+                    <option value="" {{ empty($filterMethod) ? 'selected' : '' }}>All Methods</option>
+                    <option value="bank" {{ ($filterMethod ?? '') == 'bank' ? 'selected' : '' }}>Bank Transfer</option>
+                    <option value="wallet" {{ ($filterMethod ?? '') == 'wallet' ? 'selected' : '' }}>Wallet</option>
+                </select>
+            </div>
+
+            <!-- Amount Range -->
+            <div class="col-md-2">
+                <label class="form-label fw-semibold text-muted small mb-1">Min Amount (₦)</label>
+                <input type="number"
+                       name="amount_min"
+                       class="form-control"
+                       placeholder="0"
+                       value="{{ $amountMin ?? '' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold text-muted small mb-1">Max Amount (₦)</label>
+                <input type="number"
+                       name="amount_max"
+                       class="form-control"
+                       placeholder="e.g. 50000"
+                       value="{{ $amountMax ?? '' }}">
+            </div>
+
+            <!-- Date Range -->
+            <div class="col-md-2">
+                <label class="form-label fw-semibold text-muted small mb-1">From Date</label>
+                <input type="date"
+                       name="date_from"
+                       class="form-control"
+                       value="{{ $dateFrom ?? '' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold text-muted small mb-1">To Date</label>
+                <input type="date"
+                       name="date_to"
+                       class="form-control"
+                       value="{{ $dateTo ?? '' }}">
+            </div>
+
+            <!-- Buttons -->
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="feather-search me-1"></i> Search
+                </button>
+                <a href="{{ route('admin.referral.withdrawals.index') }}?status={{ $status }}"
+                   class="btn btn-outline-secondary" title="Clear Filters">
+                    <i class="feather-x"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Filter Tabs -->
 <div class="card">
     <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs">
             <li class="nav-item">
-                <a class="nav-link {{ $status == 'pending' ? 'active' : '' }}" href="?status=pending">
+                <a class="nav-link {{ $status == 'pending' ? 'active' : '' }}"
+                   href="?status=pending&search={{ $search ?? '' }}&method={{ $filterMethod ?? '' }}&amount_min={{ $amountMin ?? '' }}&amount_max={{ $amountMax ?? '' }}&date_from={{ $dateFrom ?? '' }}&date_to={{ $dateTo ?? '' }}">
                     Pending ({{ $stats['pending'] }})
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ $status == 'approved' ? 'active' : '' }}" href="?status=approved">
+                <a class="nav-link {{ $status == 'approved' ? 'active' : '' }}"
+                   href="?status=approved&search={{ $search ?? '' }}&method={{ $filterMethod ?? '' }}&amount_min={{ $amountMin ?? '' }}&amount_max={{ $amountMax ?? '' }}&date_from={{ $dateFrom ?? '' }}&date_to={{ $dateTo ?? '' }}">
                     Approved ({{ $stats['approved'] }})
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ $status == 'success' ? 'active' : '' }}" href="?status=success">
+                <a class="nav-link {{ $status == 'success' ? 'active' : '' }}"
+                   href="?status=success&search={{ $search ?? '' }}&method={{ $filterMethod ?? '' }}&amount_min={{ $amountMin ?? '' }}&amount_max={{ $amountMax ?? '' }}&date_from={{ $dateFrom ?? '' }}&date_to={{ $dateTo ?? '' }}">
                     Completed ({{ $stats['success'] }})
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ $status == 'failed' ? 'active' : '' }}" href="?status=failed">
+                <a class="nav-link {{ $status == 'failed' ? 'active' : '' }}"
+                   href="?status=failed&search={{ $search ?? '' }}&method={{ $filterMethod ?? '' }}&amount_min={{ $amountMin ?? '' }}&amount_max={{ $amountMax ?? '' }}&date_from={{ $dateFrom ?? '' }}&date_to={{ $dateTo ?? '' }}">
                     Failed ({{ $stats['failed'] }})
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ $status == 'all' ? 'active' : '' }}" href="?status=all">
+                <a class="nav-link {{ $status == 'all' ? 'active' : '' }}"
+                   href="?status=all&search={{ $search ?? '' }}&method={{ $filterMethod ?? '' }}&amount_min={{ $amountMin ?? '' }}&amount_max={{ $amountMax ?? '' }}&date_from={{ $dateFrom ?? '' }}&date_to={{ $dateTo ?? '' }}">
                     All
                 </a>
             </li>
@@ -144,7 +250,7 @@
                                 </div>
                             </td>
                             <td>
-                                @if(str_contains($withdrawal->description, 'bank'))
+                                @if($withdrawal->withdrawal_method == 'bank')
                                     <span class="badge bg-soft-primary text-primary">
                                         <i class="feather-briefcase me-1"></i> Bank Transfer
                                     </span>
@@ -156,11 +262,11 @@
                             </td>
                             <td class="fw-bold">₦{{ number_format($withdrawal->amount, 2) }}</td>
                             <td>
-                                @if(isset($withdrawal->metadata['bank_name']))
+                                @if($withdrawal->bank_name)
                                     <div class="small">
-                                        <div><strong>{{ $withdrawal->metadata['bank_name'] }}</strong></div>
-                                        <div>{{ $withdrawal->metadata['account_number'] }}</div>
-                                        <div>{{ $withdrawal->metadata['account_name'] }}</div>
+                                        <div><strong>{{ $withdrawal->bank_name }}</strong></div>
+                                        <div>{{ $withdrawal->account_number }}</div>
+                                        <div>{{ $withdrawal->account_name }}</div>
                                     </div>
                                 @else
                                     <span class="text-muted">N/A</span>
@@ -189,8 +295,8 @@
                             <td>
                                 @if($withdrawal->status == 'pending')
                                     @if(Auth::guard('admin')->user()->isSuperAdmin() || Auth::guard('admin')->user()->isAccountant())
-                                        <div class="btn-group">
-                                            @if(str_contains($withdrawal->description, 'wallet'))
+                                        <div class="d-flex gap-1">
+                                            @if($withdrawal->withdrawal_method == 'wallet')
                                                 <form action="{{ route('admin.referral.withdrawals.approve-wallet', $withdrawal->id) }}" 
                                                       method="POST" 
                                                       onsubmit="return confirm('Approve this wallet withdrawal?')">
@@ -211,49 +317,12 @@
                                             @endif
                                             
                                             <button type="button" 
-                                                    class="btn btn-sm btn-danger ms-1" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#rejectModal{{ $withdrawal->id }}"
+                                                    class="btn btn-sm btn-danger" 
+                                                    data-bs-toggle="collapse" 
+                                                    data-bs-target="#rejectForm{{ $withdrawal->id }}"
                                                     title="Reject Withdrawal">
                                                 <i class="feather-x"></i> Reject
                                             </button>
-                                        </div>
-
-                                        <!-- Reject Modal -->
-                                        <div class="modal fade" id="rejectModal{{ $withdrawal->id }}" tabindex="-1">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <form action="{{ route('admin.referral.withdrawals.reject', $withdrawal->id) }}" method="POST">
-                                                        @csrf
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title">Reject Withdrawal</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <p>Rejecting withdrawal for <strong>{{ $withdrawal->referral->user->name }}</strong></p>
-                                                            <p>Amount: <strong>₦{{ number_format($withdrawal->amount, 2) }}</strong></p>
-                                                            
-                                                            <div class="mb-3">
-                                                                <label class="form-label">Reason for Rejection *</label>
-                                                                <textarea name="reason" 
-                                                                          class="form-control" 
-                                                                          rows="3" 
-                                                                          placeholder="Enter reason for rejection" 
-                                                                          required></textarea>
-                                                            </div>
-
-                                                            <div class="alert alert-warning">
-                                                                <i class="feather-info me-2"></i>
-                                                                The amount will be refunded to the user's referral balance.
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                            <button type="submit" class="btn btn-danger">Reject Withdrawal</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
                                         </div>
                                     @else
                                         <span class="badge bg-soft-warning text-warning">
@@ -267,6 +336,60 @@
                                 @endif
                             </td>
                         </tr>
+                        
+                        <!-- Reject Form Dropdown Row -->
+                        @if($withdrawal->status == 'pending' && (Auth::guard('admin')->user()->isSuperAdmin() || Auth::guard('admin')->user()->isAccountant()))
+                        <tr class="collapse" id="rejectForm{{ $withdrawal->id }}">
+                            <td colspan="8" class="bg-light border-top-0 p-3">
+                                <div class="card mb-0 shadow-sm">
+                                    <div class="card-header bg-danger text-white">
+                                        <h6 class="mb-0">
+                                            <i class="feather-alert-triangle me-2"></i>Reject Withdrawal - {{ $withdrawal->reference }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="{{ route('admin.referral.withdrawals.reject', $withdrawal->id) }}" method="POST">
+                                            @csrf
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="alert alert-warning mb-3">
+                                                        <strong>User:</strong> {{ $withdrawal->referral->user->name }}<br>
+                                                        <strong>Email:</strong> {{ $withdrawal->referral->user->email }}<br>
+                                                        <strong>Amount:</strong> ₦{{ number_format($withdrawal->amount, 2) }}<br>
+                                                        <small class="d-block mt-2">
+                                                            <i class="feather-info me-1"></i>
+                                                            The amount will be refunded to the user's referral balance.
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-bold">Reason for Rejection *</label>
+                                                        <textarea name="reason" 
+                                                                  class="form-control" 
+                                                                  rows="4" 
+                                                                  placeholder="Enter reason for rejection..." 
+                                                                  required></textarea>
+                                                    </div>
+                                                    <div class="d-flex gap-2">
+                                                        <button type="button" 
+                                                                class="btn btn-secondary" 
+                                                                data-bs-toggle="collapse" 
+                                                                data-bs-target="#rejectForm{{ $withdrawal->id }}">
+                                                            <i class="feather-x me-1"></i> Cancel
+                                                        </button>
+                                                        <button type="submit" class="btn btn-danger">
+                                                            <i class="feather-check me-1"></i> Confirm Rejection
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endif
                     @empty
                         <tr>
                             <td colspan="8" class="text-center py-4 text-muted">
@@ -280,8 +403,19 @@
     </div>
     @if($withdrawals->hasPages())
         <div class="card-footer">
-            {{ $withdrawals->appends(['status' => $status])->links() }}
+            {{ $withdrawals->appends([
+                'status'      => $status,
+                'search'      => $search ?? '',
+                'method'      => $filterMethod ?? '',
+                'amount_min'  => $amountMin ?? '',
+                'amount_max'  => $amountMax ?? '',
+                'date_from'   => $dateFrom ?? '',
+                'date_to'     => $dateTo ?? '',
+            ])->links() }}
         </div>
     @endif
 </div>
-@endsection
+        </div>
+
+    </main>
+@include('admin.components.footer')

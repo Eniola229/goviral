@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\Wallet;
 use App\Models\Logged;
+use App\Models\ReferredUser;
 use Illuminate\Http\Request;
 use App\Traits\LogsAdminActivity;
 use Illuminate\Support\Facades\Hash;
@@ -68,70 +69,91 @@ class CustomerController extends Controller
         ));
     }
 
-    /**
-     * Show customer details
-     */
-    public function show(Request $request, $id)
+    public function show($id)
     {
-        $customer = User::with(['orders', 'wallet', 'tickets'])->findOrFail($id);
+        $customer = User::with(['orders', 'wallet', 'tickets', 'referral'])->findOrFail($id);
         
-        // Customer statistics
+        // Existing statistics
         $totalOrders = $customer->orders()->count();
         $completedOrders = $customer->orders()->where('status', 'completed')->count();
         $pendingOrders = $customer->orders()->where('status', 'pending')->count();
         $processingOrders = $customer->orders()->where('status', 'processing')->count();
-        $totalSpent = $customer->orders()->sum('charge');
         
-        // Get wallet balance (latest balance_after)
-        $latestWallet = Wallet::where('user_id', $customer->id)
-            ->orderBy('created_at', 'desc')
-            ->first();
-        $walletBalance = $latestWallet ? $latestWallet->balance_after : 0;
-        
-        // Total deposits
-        $totalDeposits = Wallet::where('user_id', $customer->id)
+        $totalDeposits = $customer->wallet()
             ->where('type', 'credit')
             ->where('status', 'success')
             ->sum('amount');
         
-        // Paginated orders (10 per page)
+        $totalSpent = $customer->wallet()
+            ->where('type', 'debit')
+            ->where('status', 'success')
+            ->sum('amount');
+        
+        $walletBalance = $customer->balance;
+        
+        // Recent orders and transactions
         $recentOrders = $customer->orders()
             ->latest()
-            ->paginate(10, ['*'], 'orders_page');
+            ->paginate(5, ['*'], 'orders_page');
         
-        // Recent wallet transactions (10 items, not paginated)
-        $recentTransactions = $customer->wallet()->latest()->take(10)->get();
+        $recentTransactions = $customer->wallet()
+            ->latest()
+            ->take(10)
+            ->get();
         
-        // Get customer logs with pagination (only if Super Admin)
+        // Customer activity logs (Super Admin only)
         $logs = null;
         if (auth('admin')->user()->canViewCustomerLogs()) {
             $logs = Logged::where('user_id', $customer->id)
                 ->latest()
-                ->paginate(15, ['*'], 'logs_page');
+                ->paginate(10, ['*'], 'logs_page');
         }
-
+        
+        // **NEW: Referral Statistics**
+        $totalReferred = ReferredUser::where('referrer_id', $customer->id)->count();
+        $depositedCount = ReferredUser::where('referrer_id', $customer->id)
+            ->where('has_deposited', true)
+            ->count();
+        $orderedCount = ReferredUser::where('referrer_id', $customer->id)
+            ->where('has_ordered', true)
+            ->count();
+        $bonusPaidCount = ReferredUser::where('referrer_id', $customer->id)
+            ->where('bonus_paid', true)
+            ->count();
+        
+        // **NEW: Get referred users list**
+        $referredUsers = ReferredUser::with('referredUser')
+            ->where('referrer_id', $customer->id)
+            ->latest()
+            ->paginate(10, ['*'], 'referrals_page');
+        
         // Log the view
-        $this->logViewed(
+        $this->logActivity(
+            'viewed',
+            auth('admin')->user()->name . ' viewed customer: ' . $customer->name,
             'User',
-            $customer->id,
-            auth('admin')->user()->name . ' viewed customer: ' . $customer->name
+            $customer->id
         );
-
+        
         return view('admin.customers.show', compact(
             'customer',
             'totalOrders',
             'completedOrders',
             'pendingOrders',
             'processingOrders',
+            'totalDeposits',
             'totalSpent',
             'walletBalance',
-            'totalDeposits',
             'recentOrders',
             'recentTransactions',
-            'logs'
+            'logs',
+            'totalReferred',
+            'depositedCount',
+            'orderedCount',
+            'bonusPaidCount',
+            'referredUsers'
         ));
     }
-
     /**
      * Edit customer (Super Admin & Accountant only)
      */

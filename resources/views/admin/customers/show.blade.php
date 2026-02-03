@@ -9,7 +9,7 @@
     .log-details td {
         border-top: none !important;
     }
-</style>
+</style> 
 
 <main class="nxl-container">
     <div class="nxl-content">
@@ -295,6 +295,159 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Referred Users Table with Statistics -->
+            <div class="col-12 mt-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="feather-users me-2"></i>Referred Users
+                        </h5>
+                    </div>
+                    
+                    <!-- Statistics in Card Body -->
+                    <div class="card-body border-bottom">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-text avatar-md bg-primary-subtle me-3">
+                                        <i class="feather-users text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">{{ $totalReferred }}</h4>
+                                        <p class="fs-12 text-muted mb-0">Total Referred</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-text avatar-md bg-success-subtle me-3">
+                                        <i class="feather-dollar-sign text-success"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">{{ $depositedCount }}</h4>
+                                        <p class="fs-12 text-muted mb-0">Deposited</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-text avatar-md bg-info-subtle me-3">
+                                        <i class="feather-shopping-cart text-info"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">{{ $orderedCount }}</h4>
+                                        <p class="fs-12 text-muted mb-0">Placed Orders</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-text avatar-md bg-warning-subtle me-3">
+                                        <i class="feather-gift text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">{{ $bonusPaidCount }}</h4>
+                                        <p class="fs-12 text-muted mb-0">Bonus Paid</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table -->
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th>User</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Deposited</th>
+                                        <th>Ordered</th>
+                                        <th>Bonus Paid</th>
+                                        <th>Referred On</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($referredUsers as $referred)
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-text avatar-sm bg-soft-primary text-primary me-2">
+                                                        {{ substr($referred->referredUser->name ?? 'U', 0, 2) }}
+                                                    </div>
+                                                    <a href="{{ route('admin.customers.show', $referred->referred_user_id) }}" class="fw-bold text-primary">
+                                                        {{ $referred->referredUser->name ?? 'Unknown User' }}
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td>{{ $referred->referredUser->email ?? 'N/A' }}</td>
+                                            <td>
+                                                @if($referred->referredUser)
+                                                    <span class="badge bg-soft-success text-success">Active</span>
+                                                @else
+                                                    <span class="badge bg-soft-danger text-danger">Deleted</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($referred->has_deposited)
+                                                    <span class="badge bg-soft-success text-success">
+                                                        <i class="feather-check me-1"></i>Yes
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-soft-secondary text-secondary">
+                                                        <i class="feather-x me-1"></i>No
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($referred->has_ordered)
+                                                    <span class="badge bg-soft-success text-success">
+                                                        <i class="feather-check me-1"></i>Yes
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-soft-secondary text-secondary">
+                                                        <i class="feather-x me-1"></i>No
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($referred->bonus_paid)
+                                                    <span class="badge bg-soft-success text-success">
+                                                        <i class="feather-check me-1"></i>Paid
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-soft-warning text-warning">
+                                                        <i class="feather-clock me-1"></i>Pending
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td>{{ $referred->created_at->format('M d, Y') }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="text-center py-3 text-muted">
+                                                <i class="feather-users fs-3 d-block mb-2"></i>
+                                                This customer hasn't referred anyone yet
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    @if($referredUsers->hasPages())
+                        <div class="card-footer">
+                            {{ $referredUsers->appends([
+                                'orders_page' => request('orders_page'),
+                                'logs_page' => request('logs_page')
+                            ])->links() }}
+                        </div>
+                    @endif
+                </div>
+            </div>
 
                 <!-- Customer Activity Logs (Super Admin Only) -->
                 @if(auth('admin')->user()->canViewCustomerLogs() && $logs)

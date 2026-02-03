@@ -56,16 +56,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/{id}', [WalletController::class, 'destroy'])->name('destroy');
         });
         
-       
-        // WALLET ROUTES
-        Route::prefix('wallet')->name('wallet.')->group(function () {
-            Route::get('/', [WalletController::class, 'index'])->name('index');
-            Route::get('/{id}', [WalletController::class, 'show'])->name('show');
-            Route::post('/{id}/approve', [WalletController::class, 'approve'])->name('approve');
-            Route::post('/{id}/reject', [WalletController::class, 'reject'])->name('reject');
-            Route::delete('/{id}', [WalletController::class, 'destroy'])->name('destroy');
-        });
-        
         Route::prefix('support')->name('support.')->group(function () {
             Route::get('/', [SupportController::class, 'index'])->name('index');
             Route::get('/{id}', [SupportController::class, 'show'])->name('show');
@@ -101,6 +91,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/update-password', [ProfileController::class, 'updatePassword'])->name('update-password');
         });
 
+    Route::prefix('referral')->name('referral.')->group(function () {
         Route::prefix('withdrawals')->name('withdrawals.')->group(function () {
             Route::get('/', [App\Http\Controllers\Admin\ReferralWithdrawalController::class, 'index'])->name('index');
             Route::get('/{id}', [App\Http\Controllers\Admin\ReferralWithdrawalController::class, 'show'])->name('show');
@@ -108,6 +99,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{id}/approve-bank', [App\Http\Controllers\Admin\ReferralWithdrawalController::class, 'approveBank'])->name('approve-bank');
             Route::post('/{id}/reject', [App\Http\Controllers\Admin\ReferralWithdrawalController::class, 'reject'])->name('reject');
         });
+    });
         
     });
 });
