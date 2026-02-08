@@ -26,7 +26,9 @@ Route::get('/faq', function () {
     return view('legal.faq');
 })->name('faq');
 
-Route::post('/wallet/webhook', [WalletController::class, 'webhook'])->name('wallet.webhook');
+// Korapay Webhook
+Route::post('/webhook/korapay', [App\Http\Controllers\KorapayWebhookController::class, 'handleWebhook'])
+    ->name('wallet.webhook');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

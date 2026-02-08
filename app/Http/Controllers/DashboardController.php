@@ -4,10 +4,13 @@ use Illuminate\Http\Request;
 use App\Services\OgaviralService;
 use App\Services\WalletService;
 use App\Models\Logged;
+use App\Traits\ChecksPendingDeposits;
 
 class DashboardController extends Controller
 {
+    use ChecksPendingDeposits;
     protected $ogaviralService;
+
 
     public function __construct(OgaviralService $ogaviralService)
     {
@@ -18,7 +21,10 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         
-        // 3. Recent Orders (Last 5) - Get before stats
+        // CHECK PENDING DEPOSITS (batch of 5 for this user only)
+        $this->checkUserPendingDeposits($user, 5);
+        
+        // Recent Orders (Last 5) - Get before stats
         $recentOrders = $user->orders()->latest()->limit(5)->get();
         
         // Auto-update recent orders status

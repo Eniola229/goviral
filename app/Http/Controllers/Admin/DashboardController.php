@@ -10,14 +10,19 @@ use App\Models\SupportTicket;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Traits\ChecksPendingDeposits;
 
 class DashboardController extends Controller
 {
+    use ChecksPendingDeposits;
     /**
      * Show admin dashboard
      */
     public function index(Request $request)
     {
+        // CHECK PENDING DEPOSITS (batch of 10 for all users)
+        $this->checkAllPendingDeposits(10, 'Admin dashboard');
+        
         // Get filter period (default: today)
         $period = $request->get('period', 'today');
         

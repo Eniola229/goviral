@@ -282,7 +282,7 @@ class ReferralWithdrawalController extends Controller
                 $withdrawal->account_number,
                 $withdrawal->account_name,
                 $withdrawal->reference,
-                'Referral withdrawal - ' . $user->name,
+                'Payment for Referral bonus - ' . $user->name . '. Booster',
                 $user->email                                  // customer email 
             );
 

@@ -9,10 +9,12 @@ use App\Models\Logged;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Traits\ChecksPendingDeposits;
 
 class WalletController extends Controller
 {
     protected $korapayService;
+    use ChecksPendingDeposits;
 
     public function __construct(KorapayService $korapayService)
     {
@@ -21,6 +23,9 @@ class WalletController extends Controller
 
     public function index()
     {
+        $user = auth()->user();
+        // CHECK PENDING DEPOSITS (batch of 5 for this user only)
+        $this->checkUserPendingDeposits($user, 5);
         return view('wallet.index');
     }
 
@@ -166,7 +171,7 @@ class WalletController extends Controller
     }
 
     /**
-     * Webhook handler for asynchronous payment notifications
+     * Webhook handler for asynchronous payment notifications (not in use)
      */
     public function webhook(Request $request)
     {

@@ -7,16 +7,21 @@ use App\Models\Wallet;
 use App\Models\Logged;
 use Illuminate\Http\Request;
 use App\Traits\LogsAdminActivity;
+use App\Traits\ChecksPendingDeposits;
 
 class WalletController extends Controller
 {
     use LogsAdminActivity;
+    use ChecksPendingDeposits;
 
     /**
      * Display all wallet transactions with filters and pagination
      */
     public function index(Request $request)
     {
+        // CHECK PENDING DEPOSITS (batch of 15 on wallet page)
+        $this->checkAllPendingDeposits(15, 'Admin wallet page');
+
         $query = Wallet::with('user');
 
         // Search

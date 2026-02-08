@@ -31,7 +31,7 @@ class KorapayService
                 ];
             }
 
-            $reference = 'VIRAL-' . strtoupper(Str::random(10));
+            $reference = 'BOOSTER-FW-' . strtoupper(Str::random(10));
 
             $payload = [
                 'reference' => $reference,
@@ -126,7 +126,7 @@ class KorapayService
 
             return [
                 'success' => false,
-                'message' => 'An error occurred: ' . $e->getMessage()
+                'message' => 'An error occurred'
             ];
         }
     }
@@ -239,8 +239,7 @@ class KorapayService
 
             return [
                 'success' => false,
-                'message' => 'Verification error: ' . $e->getMessage()
-            ];
+                'message' => 'Verification error: Pls contact customer support if you have been debited'            ];
         }
     }
 
@@ -278,7 +277,7 @@ class KorapayService
                     'message' => 'Payment gateway not configured. Please contact support.'
                 ];
             }
-
+ 
             $bankCode = $this->getBankCode($bankName);
 
             if ($bankCode === '000') {

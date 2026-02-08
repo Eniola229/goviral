@@ -319,13 +319,13 @@ function copyLink() {
 }
 
 function shareWhatsApp() {
-    const text = `Join Viral.com and grow your social media! Use my referral code: {{ $referral->referral_code }}`;
+    const text = `Join Booster and grow your social media! Use my referral code: {{ $referral->referral_code }}`;
     const url = `{{ url('/register?ref=' . $referral->referral_code) }}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
 }
 
 function shareTwitter() {
-    const text = `Join Viral.com and grow your social media! Use my referral code: {{ $referral->referral_code }}`;
+    const text = `Join Booster and grow your social media! Use my referral code: {{ $referral->referral_code }}`;
     const url = `{{ url('/register?ref=' . $referral->referral_code) }}`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
 }
