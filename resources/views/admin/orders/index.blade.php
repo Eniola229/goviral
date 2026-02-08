@@ -17,7 +17,7 @@
                 </ul>
             </div>
         </div>
-
+ <div class="main-content">
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show">
                 <i class="feather-check-circle me-2"></i>
@@ -144,13 +144,68 @@
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <h5 class="text-dark mb-1">
-                                    <i class="feather-trending-up me-2"></i>Total Profit (Based on Markup)
+                                    <i class="feather-trending-up me-2"></i>
+                                    @if(request('date_from') || request('date_to'))
+                                        Profit (Filtered Period)
+                                    @else
+                                        Profit ({{ now()->format('F Y') }})
+                                    @endif
                                 </h5>
-                                <p class="text-dark-50 mb-0">Revenue minus API costs across all orders</p>
+                                <p class="text-dark-50 mb-0">
+                                    @if(request('date_from') && request('date_to'))
+                                        {{ \Carbon\Carbon::parse(request('date_from'))->format('M d, Y') }} - {{ \Carbon\Carbon::parse(request('date_to'))->format('M d, Y') }}
+                                    @elseif(request('date_from'))
+                                        From {{ \Carbon\Carbon::parse(request('date_from'))->format('M d, Y') }}
+                                    @elseif(request('date_to'))
+                                        Up to {{ \Carbon\Carbon::parse(request('date_to'))->format('M d, Y') }}
+                                    @else
+                                        Current month - Revenue minus API costs
+                                    @endif
+                                </p>
                             </div>
                             <div class="col-md-4 text-end">
                                 @php
-                                    $totalProfit = $orders->sum(function($order) {
+                                    // Build fresh query for profit calculation (no pagination)
+                                    $profitQuery = \App\Models\Order::query();
+                                    
+                                    // Apply date filters if present
+                                    if(request('date_from')) {
+                                        $profitQuery->whereDate('created_at', '>=', request('date_from'));
+                                    } elseif(!request('date_to')) {
+                                        // Default to current month if no date filters
+                                        $profitQuery->whereMonth('created_at', now()->month)
+                                                   ->whereYear('created_at', now()->year);
+                                    }
+                                    
+                                    if(request('date_to')) {
+                                        $profitQuery->whereDate('created_at', '<=', request('date_to'));
+                                    }
+                                    
+                                    // Apply status filter
+                                    if(request('status')) {
+                                        $profitQuery->where('status', request('status'));
+                                    }
+                                    
+                                    // Apply service filter (if you have one)
+                                    if(request('service')) {
+                                        $profitQuery->where('service_name', request('service'));
+                                    }
+                                    
+                                    // Apply search filter
+                                    if(request('search')) {
+                                        $search = request('search');
+                                        $profitQuery->where(function($q) use ($search) {
+                                            $q->where('order_id', 'like', "%{$search}%")
+                                              ->orWhere('link', 'like', "%{$search}%")
+                                              ->orWhere('service_name', 'like', "%{$search}%");
+                                        });
+                                    }
+                                    
+                                    // Get ALL matching orders (no limit/pagination)
+                                    $allOrders = $profitQuery->get();
+                                    
+                                    // Calculate total profit
+                                    $totalProfit = $allOrders->sum(function($order) {
                                         return \App\Services\PricingService::calculateProfit(
                                             $order->charge, 
                                             $order->quantity, 
@@ -159,6 +214,7 @@
                                     });
                                 @endphp
                                 <h2 class="text-dark mb-0">₦{{ number_format($totalProfit, 2) }}</h2>
+                                <small class="text-dark-50">{{ number_format($allOrders->count()) }} orders</small>
                             </div>
                         </div>
                     </div>
@@ -168,6 +224,7 @@
         @endif
 
         <!-- Orders Table -->
+
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title">All Orders</h5>
@@ -305,7 +362,7 @@
             </div>
             @endif
         </div>
-
+    </div>
     </div>
 </main>
 

@@ -17,7 +17,7 @@
                 </ul>
             </div>
         </div>
-
+        <div class="main-content">
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show">
                 <i class="feather-check-circle me-2"></i>
@@ -104,7 +104,7 @@
         @endif
 
         <!-- Main Content -->
-        <div class="main-content">
+        
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card stretch stretch-full">
@@ -141,7 +141,7 @@
                                         <label class="form-label fs-11">Status</label>
                                         <select name="status" class="form-select">
                                             <option value="">All Status</option>
-                                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                                            <option value="success" {{ request('status') == 'success' ? 'selected' : '' }}>Completed</option>
                                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                                             <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Failed</option>
                                         </select>

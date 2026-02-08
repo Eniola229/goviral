@@ -27,7 +27,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $query = Order::with('user');
-
+        
         // Search
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -42,12 +42,12 @@ class OrderController extends Controller
                   });
             });
         }
-
+        
         // Filter by status
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
         }
-
+        
         // Filter by date range
         if ($request->has('date_from') && $request->date_from) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -55,7 +55,7 @@ class OrderController extends Controller
         if ($request->has('date_to') && $request->date_to) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
-
+        
         // Filter by amount range
         if ($request->has('amount_min') && $request->amount_min) {
             $query->where('charge', '>=', $request->amount_min);
@@ -63,21 +63,59 @@ class OrderController extends Controller
         if ($request->has('amount_max') && $request->amount_max) {
             $query->where('charge', '<=', $request->amount_max);
         }
-
+        
         // Pagination
         $orders = $query->latest()->paginate(20)->withQueryString();
-
+        
         // AUTO-UPDATE ORDER STATUSES
         $this->autoUpdateOrderStatuses($orders);
-
-        // Statistics
-        $totalOrders = Order::count();
-        $pendingOrders = Order::where('status', 'pending')->count();
-        $processingOrders = Order::where('status', 'processing')->count();
-        $completedOrders = Order::where('status', 'completed')->count();
-        $cancelledOrders = Order::where('status', 'cancelled')->count();
-        $totalRevenue = Order::where('status', 'completed')->sum('charge');
-
+        
+        // Create a base query for statistics with the same filters
+        $statsQuery = Order::query();
+        
+        // Apply all the same filters to statistics
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $statsQuery->where(function($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhere('service_name', 'like', "%{$search}%")
+                  ->orWhere('link', 'like', "%{$search}%")
+                  ->orWhere('api_order_id', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        if ($request->has('status') && $request->status) {
+            $statsQuery->where('status', $request->status);
+        }
+        
+        if ($request->has('date_from') && $request->date_from) {
+            $statsQuery->whereDate('created_at', '>=', $request->date_from);
+        }
+        
+        if ($request->has('date_to') && $request->date_to) {
+            $statsQuery->whereDate('created_at', '<=', $request->date_to);
+        }
+        
+        if ($request->has('amount_min') && $request->amount_min) {
+            $statsQuery->where('charge', '>=', $request->amount_min);
+        }
+        
+        if ($request->has('amount_max') && $request->amount_max) {
+            $statsQuery->where('charge', '<=', $request->amount_max);
+        }
+        
+        // Statistics based on filtered data
+        $totalOrders = (clone $statsQuery)->count();
+        $pendingOrders = (clone $statsQuery)->where('status', 'pending')->count();
+        $processingOrders = (clone $statsQuery)->where('status', 'processing')->count();
+        $completedOrders = (clone $statsQuery)->where('status', 'completed')->count();
+        $cancelledOrders = (clone $statsQuery)->where('status', 'cancelled')->count();
+        $totalRevenue = (clone $statsQuery)->where('status', 'completed')->sum('charge');
+        
         // Log the view
         $this->logActivity(
             'viewed',
@@ -85,7 +123,7 @@ class OrderController extends Controller
             'Order',
             null
         );
-
+        
         return view('admin.orders.index', compact(
             'orders',
             'totalOrders',
@@ -96,7 +134,6 @@ class OrderController extends Controller
             'totalRevenue'
         ));
     }
-
     /**
      * Show single order with AUTO STATUS UPDATE
      */

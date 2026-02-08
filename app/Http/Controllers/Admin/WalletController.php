@@ -21,9 +21,9 @@ class WalletController extends Controller
     {
         // CHECK PENDING DEPOSITS (batch of 15 on wallet page)
         $this->checkAllPendingDeposits(15, 'Admin wallet page');
-
+        
         $query = Wallet::with('user');
-
+        
         // Search
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -36,22 +36,22 @@ class WalletController extends Controller
                   });
             });
         }
-
+        
         // Filter by type
         if ($request->has('type') && $request->type) {
             $query->where('type', $request->type);
         }
-
+        
         // Filter by status
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
         }
-
+        
         // Filter by payment method
         if ($request->has('payment_method') && $request->payment_method) {
             $query->where('payment_method', $request->payment_method);
         }
-
+        
         // Filter by date range
         if ($request->has('date_from') && $request->date_from) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -59,7 +59,7 @@ class WalletController extends Controller
         if ($request->has('date_to') && $request->date_to) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
-
+        
         // Filter by amount range
         if ($request->has('amount_min') && $request->amount_min) {
             $query->where('amount', '>=', $request->amount_min);
@@ -67,18 +67,62 @@ class WalletController extends Controller
         if ($request->has('amount_max') && $request->amount_max) {
             $query->where('amount', '<=', $request->amount_max);
         }
-
+        
         // Pagination
         $transactions = $query->latest()->paginate(20)->withQueryString();
-
-        // Statistics
-        $totalTransactions = Wallet::count();
-        $totalDeposits = Wallet::where('type', 'credit')->where('status', 'success')->count();
-        $totalDebits = Wallet::where('type', 'debit')->count();
-        $pendingDeposits = Wallet::where('type', 'credit')->where('status', 'pending')->count();
-        $pendingAmount = Wallet::where('type', 'credit')->where('status', 'pending')->sum('amount');
-        $completedAmount = Wallet::where('type', 'credit')->where('status', 'success')->sum('amount');
-
+        
+        // Create a base query for statistics with the same filters
+        $statsQuery = Wallet::query();
+        
+        // Apply all the same filters to statistics
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $statsQuery->where(function($q) use ($search) {
+                $q->where('reference', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        if ($request->has('type') && $request->type) {
+            $statsQuery->where('type', $request->type);
+        }
+        
+        if ($request->has('status') && $request->status) {
+            $statsQuery->where('status', $request->status);
+        }
+        
+        if ($request->has('payment_method') && $request->payment_method) {
+            $statsQuery->where('payment_method', $request->payment_method);
+        }
+        
+        if ($request->has('date_from') && $request->date_from) {
+            $statsQuery->whereDate('created_at', '>=', $request->date_from);
+        }
+        
+        if ($request->has('date_to') && $request->date_to) {
+            $statsQuery->whereDate('created_at', '<=', $request->date_to);
+        }
+        
+        if ($request->has('amount_min') && $request->amount_min) {
+            $statsQuery->where('amount', '>=', $request->amount_min);
+        }
+        
+        if ($request->has('amount_max') && $request->amount_max) {
+            $statsQuery->where('amount', '<=', $request->amount_max);
+        }
+        
+        // Statistics based on filtered data
+        $totalTransactions = (clone $statsQuery)->count();
+        $totalDeposits = (clone $statsQuery)->where('type', 'credit')->where('status', 'success')->count();
+        $totalDebits = (clone $statsQuery)->where('type', 'debit')->count();
+        $pendingDeposits = (clone $statsQuery)->where('type', 'credit')->where('status', 'pending')->count();
+        $pendingAmount = (clone $statsQuery)->where('type', 'credit')->where('status', 'pending')->sum('amount');
+        $completedAmount = (clone $statsQuery)->where('type', 'credit')->where('status', 'success')->sum('amount');
+        
         // Log the view
         $this->logActivity(
             'viewed',
@@ -86,7 +130,7 @@ class WalletController extends Controller
             'Wallet',
             null
         );
-
+        
         return view('admin.wallet.index', compact(
             'transactions',
             'totalTransactions',
@@ -97,7 +141,6 @@ class WalletController extends Controller
             'completedAmount'
         ));
     }
-
     /**
      * Show single transaction details
      */
