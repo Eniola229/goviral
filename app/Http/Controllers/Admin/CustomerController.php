@@ -22,17 +22,20 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $query = User::query();
-
+        
         // Search
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('id', 'like', "%{$search}%");
+                  ->orWhere('id', 'like', "%{$search}%")
+                  ->orWhereHas('referral', function($referralQuery) use ($search) {
+                      $referralQuery->where('referral_code', 'like', "%{$search}%");
+                  });
             });
         }
-
+        
         // Filter by date
         if ($request->has('date_from') && $request->date_from) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -40,19 +43,19 @@ class CustomerController extends Controller
         if ($request->has('date_to') && $request->date_to) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
-
+        
         // Get customers with counts
         $customers = $query->withCount(['orders', 'tickets'])
             ->latest()
             ->paginate(20);
-
+        
         // Statistics
         $totalCustomers = User::count();
         $todayCustomers = User::whereDate('created_at', today())->count();
         $activeCustomers = User::whereHas('orders', function($q) {
             $q->where('created_at', '>=', now()->subDays(30));
         })->count();
-
+        
         // Log the view
         $this->logActivity(
             'viewed',
@@ -60,7 +63,7 @@ class CustomerController extends Controller
             'User',
             null
         );
-
+        
         return view('admin.customers.index', compact(
             'customers',
             'totalCustomers',
@@ -68,7 +71,6 @@ class CustomerController extends Controller
             'activeCustomers'
         ));
     }
-
     public function show($id)
     {
         $customer = User::with(['orders', 'wallet', 'tickets', 'referral'])->findOrFail($id);

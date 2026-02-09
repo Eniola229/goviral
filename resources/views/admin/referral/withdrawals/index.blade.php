@@ -3,7 +3,7 @@
 @include('admin.components.header')
 
 
-<main class="nxl-container p-2">
+<main class="nxl-container">
     <div class="nxl-content">
 
 <div class="page-header">
@@ -34,7 +34,7 @@
             default   => 'info',
         };
     @endphp
-
+<div class="main-content">
     <div class="alert alert-{{ $bgClass }} alert-dismissible fade show">
         <i class="feather-{{ $icon }} me-2"></i>
         {{ session('alert.message') }}
@@ -415,6 +415,7 @@
         </div>
     @endif
 </div>
+        </div>
         </div>
 
     </main>

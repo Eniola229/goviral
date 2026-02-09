@@ -195,7 +195,7 @@
                                     if(request('search')) {
                                         $search = request('search');
                                         $profitQuery->where(function($q) use ($search) {
-                                            $q->where('order_id', 'like', "%{$search}%")
+                                            $q->where('id', 'like', "%{$search}%")
                                               ->orWhere('link', 'like', "%{$search}%")
                                               ->orWhere('service_name', 'like', "%{$search}%");
                                         });
