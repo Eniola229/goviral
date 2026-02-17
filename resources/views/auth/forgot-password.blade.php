@@ -1,5 +1,4 @@
 @include('components.g-header')
-
 <main class="auth-minimal-wrapper">
     <div class="auth-minimal-inner">
         <div class="minimal-card-wrapper">
@@ -15,7 +14,13 @@
                     </p>
                     
                     <!-- Session Status -->
-                    <x-auth-session-status class="mb-4" :status="session('status')" />
+                    @if(session('status'))
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <i class="feather-check-circle me-2"></i>
+                            {{ session('status') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
                     
                     <form method="POST" action="{{ route('password.email') }}" class="w-100 mt-4 pt-2">
                         @csrf
@@ -23,7 +28,13 @@
                         <!-- Email Address -->
                         <div class="mb-4">
                             <input id="email" type="email" class="form-control" name="email" placeholder="Email Address" :value="old('email')" required autofocus>
-                            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                            @error('email')
+                                <div class="alert alert-danger alert-dismissible fade show mt-2">
+                                    <i class="feather-alert-circle me-2"></i>
+                                    {{ $message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            @enderror
                         </div>
                         
                         <div class="mt-5">
@@ -40,5 +51,4 @@
         </div>
     </div>
 </main>
-
 @include('components.g-footer')

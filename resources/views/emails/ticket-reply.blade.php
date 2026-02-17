@@ -1,58 +1,65 @@
 @include('components.g-header')
-<main class="auth-minimal-wrapper">
-    <div class="auth-minimal-inner">
-        <div class="minimal-card-wrapper">
-            <div class="card mb-4 mt-5 mx-4 mx-sm-0 position-relative">
-                <div class="wd-50 bg-white p-2 rounded-circle shadow-lg position-absolute translate-middle top-0 start-50">
-                    <img src="{{ asset('assets/images/B.png') }}" alt="" class="img-fluid">
-                </div>
-                <div class="card-body p-sm-5">
-                    <h2 class="fs-20 fw-bolder mb-4">Support Ticket Reply</h2>
-                    <h4 class="fs-13 fw-bold mb-2">You have a new reply to your support ticket</h4>
-                    
-                    <div class="mt-4 pt-2">
-                        <p class="mb-3">Hello <strong>{{ $ticket->user->name }}</strong>,</p>
-                        
-                        <p class="mb-3">Our support team has responded to your ticket.</p>
-                        
-                        <div class="alert alert-light border mb-4">
-                            <div class="mb-2">
-                                <strong>Ticket #:</strong> {{ $ticket->id }}
-                            </div>
-                            <div class="mb-2">
-                                <strong>Subject:</strong> {{ $ticket->subject }}
-                            </div>
-                            <div>
-                                <strong>Status:</strong> 
-                                <span class="badge 
-                                    @if($ticket->status === 'open') bg-warning
-                                    @elseif($ticket->status === 'in_progress') bg-info
-                                    @elseif($ticket->status === 'closed') bg-success
-                                    @endif">
-                                    {{ ucfirst(str_replace('_', ' ', $ticket->status)) }}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="card bg-light mb-4">
-                            <div class="card-body">
-                                <h5 class="fs-14 fw-bold mb-3">Admin Reply:</h5>
-                                <p class="mb-0" style="white-space: pre-wrap;">{{ $message->message }}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-4">
-                            <a href="{{ route('user.support.show', $ticket->id) }}" class="btn btn-lg btn-primary w-100">
-                                View Full Ticket & Reply
-                            </a>
-                        </div>
-                        
-                        <div class="mt-4 text-muted">
-                            <p class="fs-12 mb-0">If you have any questions, please reply to this ticket or contact our support team.</p>
-                        </div>
+<main style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 40px 20px; min-height: 100vh;">
+    <div style="max-width: 600px; margin: 0 auto;">
+        <div style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin-top: 40px;">
+
+            <!-- Header -->
+            <div style="background: #4f46e5; padding: 30px; text-align: center;">
+                <img src="{{ asset('assets/images/B.png') }}" alt="Logo" style="height: 50px; width: auto;">
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 40px 30px;">
+                <h2 style="font-size: 22px; font-weight: 700; margin: 0 0 8px 0; color: #1a1a2e;">Support Ticket Reply</h2>
+                <h4 style="font-size: 15px; font-weight: 600; margin: 0 0 24px 0; color: #444;">You have a new reply to your support ticket</h4>
+
+                <p style="margin: 0 0 12px 0; color: #333; font-size: 14px;">Hello <strong>{{ $ticket->user->name }}</strong>,</p>
+                <p style="margin: 0 0 24px 0; color: #333; font-size: 14px;">Our support team has responded to your ticket.</p>
+
+                <!-- Ticket Info Box -->
+                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 0 0 24px 0;">
+                    <div style="margin-bottom: 10px; font-size: 14px; color: #333;">
+                        <strong>Ticket #:</strong> {{ $ticket->id }}
+                    </div>
+                    <div style="margin-bottom: 10px; font-size: 14px; color: #333;">
+                        <strong>Subject:</strong> {{ $ticket->subject }}
+                    </div>
+                    <div style="font-size: 14px; color: #333;">
+                        <strong>Status:</strong>
+                        <span style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #fff;
+                            background-color: 
+                            @if($ticket->status === 'open') #f59e0b
+                            @elseif($ticket->status === 'in_progress') #0ea5e9
+                            @elseif($ticket->status === 'closed') #22c55e
+                            @else #6b7280
+                            @endif;">
+                            {{ ucfirst(str_replace('_', ' ', $ticket->status)) }}
+                        </span>
                     </div>
                 </div>
+
+                <!-- Admin Reply Box -->
+                <div style="background: #f0f0ff; border: 1px solid #c7c7f0; border-radius: 8px; padding: 20px; margin: 0 0 24px 0;">
+                    <h5 style="font-size: 14px; font-weight: 700; margin: 0 0 12px 0; color: #1a1a2e;">Admin Reply:</h5>
+                    <p style="font-size: 14px; color: #333; margin: 0; white-space: pre-wrap;">{{ $message->message }}</p>
+                </div>
+
+                <!-- Button -->
+                <div style="text-align: center; margin: 32px 0;">
+                    <a href="{{ route('user.support.show', $ticket->id) }}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; width: 100%; box-sizing: border-box; text-align: center;">
+                        View Full Ticket & Reply
+                    </a>
+                </div>
+
+                <!-- Footer Note -->
+                <p style="font-size: 13px; color: #888; margin: 0;">If you have any questions, please reply to this ticket or contact our support team.</p>
             </div>
+
+            <!-- Footer -->
+            <div style="background: #f4f4f4; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                <p style="font-size: 12px; color: #aaa; margin: 0;">© {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+            </div>
+
         </div>
     </div>
 </main>

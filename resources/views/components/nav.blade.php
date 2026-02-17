@@ -69,7 +69,7 @@
                     </a>
                     <ul class="nxl-submenu">
                         <li class="nxl-item"><a class="nxl-link" href="{{ route('support.index') }}">New Ticket</a></li>
-                        <li class="nxl-item"><a class="nxl-link" href="{{ route('support.index') }}">My Tickets</a></li>
+                        
                     </ul>
                 </li>
 

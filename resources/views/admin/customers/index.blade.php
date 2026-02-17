@@ -5,6 +5,7 @@
 <main class="nxl-container">
     <div class="nxl-content">
         
+
         <!-- Page Header -->
         <div class="page-header">
             <div class="page-header-left d-flex align-items-center">
@@ -17,7 +18,8 @@
                 </ul>
             </div>
         </div>
-
+        <!-- Main Content -->
+        <div class="main-content">
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show">
                 <i class="feather-check-circle me-2"></i>
@@ -83,8 +85,7 @@
             </div>
         </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
+ 
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card stretch stretch-full">

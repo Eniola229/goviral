@@ -393,8 +393,8 @@ class OrderController extends Controller
                 'amount' => $order->charge,
                 'balance_after' => $currentBalance + $order->charge,
                 'type' => 'credit',
-                'description' => "Auto-refund for Order #" . substr($order->id, 0, 8) . " - Order cancelled by provider",
-                'reference' => 'AUTO-REFUND-' . $order->id,
+                'description' => "Auto-refund for Order #" . substr($order->id, 0, 8) . " - Order cancelled by provider (Ref: {$order->id})",
+                'reference' => 'REFUND-' . strtoupper(uniqid()),
                 'payment_method' => 'refund',
                 'status' => 'success',
             ]);

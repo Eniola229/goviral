@@ -122,7 +122,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <div class="fw-bold mb-1">Revenue</div>
+                                <div class="fw-bold mb-1">Revenue (Completed)</div>
                                 <div class="fs-4 fw-bold text-primary">₦{{ number_format($totalRevenue, 0) }}</div>
                             </div>
                             <div class="avatar-text avatar-lg bg-soft-primary text-primary">
@@ -186,11 +186,9 @@
                                         $profitQuery->where('status', request('status'));
                                     }
                                     
-                                    // Apply service filter (if you have one)
-                                    if(request('service')) {
-                                        $profitQuery->where('service_name', request('service'));
-                                    }
-                                    
+                                    // Always filter profit by completed orders only
+                                    $profitQuery->where('status', 'completed');
+
                                     // Apply search filter
                                     if(request('search')) {
                                         $search = request('search');
@@ -214,7 +212,7 @@
                                     });
                                 @endphp
                                 <h2 class="text-dark mb-0">₦{{ number_format($totalProfit, 2) }}</h2>
-                                <small class="text-dark-50">{{ number_format($allOrders->count()) }} orders</small>
+                                <small class="text-dark-50">{{ number_format($allOrders->count()) }} orders (Completed)</small>
                             </div>
                         </div>
                     </div>

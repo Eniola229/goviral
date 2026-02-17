@@ -1,5 +1,4 @@
 @include('components.g-header')
-
 <main class="auth-minimal-wrapper">
     <div class="auth-minimal-inner">
         <div class="minimal-card-wrapper">
@@ -11,6 +10,28 @@
                     <h2 class="fs-20 fw-bolder mb-4">Reset Password</h2>
                     <h4 class="fs-13 fw-bold mb-2">Create your new password</h4>
                     <p class="fs-12 fw-medium text-muted">Please enter your email address and choose a new password for your account.</p>
+
+                    <!-- Session Status -->
+                    @if(session('status'))
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <i class="feather-check-circle me-2"></i>
+                            {{ session('status') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
+                    <!-- Validation Errors -->
+                    @if($errors->any())
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            <i class="feather-alert-circle me-2"></i>
+                            <ul class="mb-0 ps-3">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
                     
                     <form method="POST" action="{{ route('password.store') }}" class="w-100 mt-4 pt-2">
                         @csrf
@@ -20,20 +41,17 @@
                         
                         <!-- Email Address -->
                         <div class="mb-4">
-                            <input id="email" type="email" class="form-control" name="email" placeholder="Email Address" :value="old('email', $request->email)" required autofocus autocomplete="username">
-                            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                            <input id="email" type="email" class="form-control" name="email" placeholder="Email Address" value="{{ old('email', $request->email) }}" required autofocus autocomplete="username">
                         </div>
                         
                         <!-- Password -->
                         <div class="mb-4">
                             <input id="password" type="password" class="form-control" name="password" placeholder="New Password" required autocomplete="new-password">
-                            <x-input-error :messages="$errors->get('password')" class="mt-2" />
                         </div>
                         
                         <!-- Confirm Password -->
                         <div class="mb-4">
                             <input id="password_confirmation" type="password" class="form-control" name="password_confirmation" placeholder="Confirm New Password" required autocomplete="new-password">
-                            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                         </div>
                         
                         <div class="mt-5">
@@ -50,5 +68,4 @@
         </div>
     </div>
 </main>
-
 @include('components.g-footer')

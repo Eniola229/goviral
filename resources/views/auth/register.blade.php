@@ -129,7 +129,7 @@
                         </div>
                         
                         <div class="mt-5">
-                            <button type="submit" class="btn btn-lg btn-primary w-100">
+                            <button type="submit"  class="btn btn-lg btn-primary w-100" >
                                 {{ __('Register') }}
                             </button>
                         </div>

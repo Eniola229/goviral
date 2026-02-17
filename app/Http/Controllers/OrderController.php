@@ -31,7 +31,7 @@ class OrderController extends Controller
             'TikTok'    => 'fa-brands fa-tiktok',
             'Facebook'  => 'fa-brands fa-facebook',
             'Telegram'  => 'fa-brands fa-telegram',
-            'Twitter'   => 'fa-brands fa-x-twitter', // or fa-twitter
+            'Twitter'   => 'fa-brands fa-twitter', // or fa-twitter
             'YouTube'   => 'fa-brands fa-youtube',
             'Spotify'   => 'fa-brands fa-spotify',
             'Pinterest' => 'fa-brands fa-pinterest',

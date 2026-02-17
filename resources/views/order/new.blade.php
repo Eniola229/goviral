@@ -40,20 +40,20 @@
                         <div class="card-body">
                             <form method="POST" action="{{ route('order.store') }}">
                                 @csrf
-                                
+                                                                
                                 <!-- 1. Platform Selection (Icons) -->
                                 <div class="mb-4">
                                     <label class="form-label mb-3">Select Platform</label>
-                                    <div class="d-flex flex-wrap gap-3" id="platform-container">
+                                    <div class="d-flex flex-wrap gap-4" id="platform-container">
                                         
                                         @foreach($groupedServices as $platformName => $data)
                                             <button type="button" 
-                                                    class="btn platform-btn btn-outline-secondary rounded-circle p-3 d-flex flex-column align-items-center justify-content-center"
-                                                    style="width: 80px; height: 80px;"
+                                                    class="btn platform-btn btn-outline-secondary d-flex flex-column align-items-center justify-content-center"
+                                                    style="width: 65px; height: 75px; border-radius: 12px; padding: 10px 5px;"
                                                     data-platform="{{ $platformName }}"
                                                     onclick="selectPlatform('{{ $platformName }}')">
-                                                <i class="{{ $data['icon'] }} fa-2x mb-1"></i>
-                                                <small style="font-size: 10px;">{{ $platformName }}</small>
+                                                <i class="{{ $data['icon'] }} fa-lg" style="margin-bottom: 6px;"></i>
+                                                <small class="mt-2" style="font-size: 9px; line-height: 1.1; text-align: center; word-wrap: break-word;">{{ $platformName }}</small>
                                             </button>
                                         @endforeach
                                     </div>
@@ -66,6 +66,39 @@
                                         <option value="">-- Please select a platform above --</option>
                                     </select>
                                     <div class="form-text" id="service_info"></div>
+                                </div>
+
+                                <!-- Description Button -->
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#orderDescription">
+                                        <i class="fas fa-info-circle me-1"></i> How to Place Orders
+                                    </button>
+                                    
+                                    <div class="collapse mt-3" id="orderDescription">
+                                        <div class="card card-body bg-light">
+                                            <p class="mb-2">Welcome to Booster, let help you grow your social media account's.</p>
+                                            <p class="mb-2">This section is packed with discounted services just for you. Same powerful results, but way easier on your wallet. 😉</p>
+                                            <p class="mb-3">If you're unsure about our services, you can place an order with a very low price to test first before going bigger. It works on any social.</p>
+                                            <p class="mb-3">🎵 TikTok • 📸 Instagram • 📱 Telegram • 🎮 Twitch • 📘 Facebook • 🎧 Spotify • 💬 WhatsApp • ▶️ YouTube • ✖️ Twitter • 👾 Discord • 👻 Snapchat • 💼 LinkedIn • 📌 Pinterest</p>
+                                            
+                                            <h6 class="fw-bold mb-2">How to get started immediately</h6>
+                                            <ol class="mb-3">
+                                                <li>📱 Select a service</li>
+                                                <li>🔗 Paste a valid link</li>
+                                                <li>🚀 Place the order - delivery starts soon and builds naturally</li>
+                                            </ol>
+                                            
+                                            <p class="mb-3">💬 Got questions before ordering? <a href="{{ route('support.index') }}" class="fw-bold">Chat our support</a> or reach us on WhatsApp at <a href="https://wa.me/2348152880128" class="fw-bold" target="_blank">+234 815 288 0128</a> - we reply fast</p>
+                                            
+                                            <div class="alert alert-warning mb-0">
+                                                <p class="mb-1">⚠️ Always Keep the post/profile public while delivery runs</p>
+                                                <p class="mb-1">✂️ Don't edit or delete the content during-delivery</p>
+                                                <p class="mb-0">➕ Avoid stacking multiple orders on the same link</p>
+                                            </div>
+                                            
+                                            <p class="mt-3 mb-0"><strong>At Booster, we're all about helping you grow.</strong> We encourage you to read the service description to understand each service before ordering so you always get maximum value.</p>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Hidden Service Name -->
@@ -94,7 +127,7 @@
                                 <input type="hidden" name="charge" id="charge" value="0">
 
                                 <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary btn-lg">Place Order</button>
+                                    <button type="submit" class="btn btn-primary btn-lg" onclick="ttq.track('PlaceAnOrder')">Place Order</button>
                                 </div>
 
                                 @error('service_id')
@@ -118,11 +151,11 @@
     const groupedData = {!! json_encode($groupedServices) !!};
 
     /**
-     * Remove "OGAVIRAL" or "OGA VIRAL" from service name
+     * Remove "OGAVIRAL" from service name
      */
     function cleanServiceName(name) {
-        // Remove 'OGAVIRAL' or 'OGA VIRAL' (case insensitive, with optional spaces)
-        let cleaned = name.replace(/OGA\s*VIRAL/gi, '');
+        // Remove 'OGAVIRAL' (case insensitive)
+        let cleaned = name.replace(/OGAVIRAL/gi, 'BOOSTER');
         
         // Remove leading/trailing special characters, spaces, dashes, pipes, bullets
         cleaned = cleaned.replace(/^[\s\-–—|•]+|[\s\-–—|•]+$/g, '');
@@ -159,7 +192,7 @@
             const option = document.createElement('option');
             option.value = service.service;
             
-            // Clean the service name (remove OGAVIRAL)
+            // Clean the service name (remove BOOSTER)
             const displayName = cleanServiceName(service.name);
             
             // Use marked_up_price if available, otherwise fall back to rate
@@ -210,7 +243,7 @@
         const maxQty = selectedOption.getAttribute('data-max');
         const category = selectedOption.getAttribute('data-category');
         
-        // Clean category name (remove OGAVIRAL)
+        // Clean category name
         const cleanCategory = cleanServiceName(category);
         
         document.getElementById('service_info').innerHTML = `Category: ${cleanCategory}<br>Min: ${minQty}, Max: ${maxQty}`;

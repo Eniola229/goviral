@@ -1,38 +1,51 @@
 @include('components.g-header')
-<main class="auth-minimal-wrapper">
-    <div class="auth-minimal-inner">
-        <div class="minimal-card-wrapper">
-            <div class="card mb-4 mt-5 mx-4 mx-sm-0 position-relative">
-                <div class="wd-50 bg-white p-2 rounded-circle shadow-lg position-absolute translate-middle top-0 start-50">
-                    <img src="{{ asset('assets/images/B.png') }}" alt="" class="img-fluid">
+<main style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 40px 20px; min-height: 100vh;">
+    <div style="max-width: 600px; margin: 0 auto;">
+        <div style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin-top: 40px;">
+            
+            <!-- Header -->
+            <div style="background: #4f46e5; padding: 30px; text-align: center;">
+                <img src="{{ asset('assets/images/B.png') }}" alt="Logo" style="height: 50px; width: auto;">
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 40px 30px;">
+                <h2 style="font-size: 22px; font-weight: 700; margin: 0 0 8px 0; color: #1a1a2e;">Reset Password</h2>
+                <h4 style="font-size: 15px; font-weight: 600; margin: 0 0 24px 0; color: #444;">You requested a password reset</h4>
+
+                <p style="margin: 0 0 16px 0; color: #333; font-size: 14px;">Hello,</p>
+
+                <p style="margin: 0 0 24px 0; color: #333; font-size: 14px;">You are receiving this email because we received a password reset request for your account.</p>
+
+                <!-- Button -->
+                <div style="text-align: center; margin: 32px 0;">
+                    <a href="{{ $url }}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; width: 100%; box-sizing: border-box; text-align: center;">
+                        Reset Password
+                    </a>
                 </div>
-                <div class="card-body p-sm-5">
-                    <h2 class="fs-20 fw-bolder mb-4">Reset Password</h2>
-                    <h4 class="fs-13 fw-bold mb-2">You requested a password reset</h4>
-                    
-                    <div class="mt-4 pt-2">
-                        <p class="mb-3">Hello,</p>
-                        
-                        <p class="mb-3">You are receiving this email because we received a password reset request for your account.</p>
-                        
-                        <div class="mt-4">
-                            <a href="{{ $url }}" class="btn btn-lg btn-primary w-100">
-                                Reset Password
-                            </a>
-                        </div>
-                        
-                        <div class="alert alert-light border mt-4">
-                            <p class="fs-12 mb-2"><strong>This password reset link will expire in {{ config('auth.passwords.'.config('auth.defaults.passwords').'.expire') }} minutes.</strong></p>
-                        </div>
-                        
-                        <div class="mt-4 text-muted">
-                            <p class="fs-12 mb-2">If you did not request a password reset, no further action is required.</p>
-                            <p class="fs-11 mb-0">If you're having trouble clicking the "Reset Password" button, copy and paste the URL below into your web browser:</p>
-                            <p class="fs-11 text-break"><a href="{{ $url }}">{{ $url }}</a></p>
-                        </div>
-                    </div>
+
+                <!-- Expiry Notice -->
+                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 24px 0;">
+                    <p style="font-size: 13px; margin: 0; color: #555;">
+                        <strong>This password reset link will expire in {{ config('auth.passwords.'.config('auth.defaults.passwords').'.expire') }} minutes.</strong>
+                    </p>
+                </div>
+
+                <!-- Footer Note -->
+                <div style="margin-top: 24px;">
+                    <p style="font-size: 13px; color: #888; margin: 0 0 10px 0;">If you did not request a password reset, no further action is required.</p>
+                    <p style="font-size: 12px; color: #aaa; margin: 0 0 6px 0;">If you're having trouble clicking the "Reset Password" button, copy and paste the URL below into your web browser:</p>
+                    <p style="font-size: 12px; word-break: break-all; margin: 0;">
+                        <a href="{{ $url }}" style="color: #4f46e5;">{{ $url }}</a>
+                    </p>
                 </div>
             </div>
+
+            <!-- Footer -->
+            <div style="background: #f4f4f4; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                <p style="font-size: 12px; color: #aaa; margin: 0;">© {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+            </div>
+
         </div>
     </div>
 </main>

@@ -63,18 +63,18 @@ return [
         'soundcloud' => 30,     // 30% - Music platform
         
         // Medium-value platforms
-        'facebook' => 25,       // 25% - Large volume
+        'facebook' => 30,       // 25% - Large volume
         'linkedin' => 30,       // 30% - Professional network
         'snapchat' => 28,       // 28% - Younger demographic
         'pinterest' => 25,      // 25% - Visual platform
         'twitch' => 30,         // 30% - Live streaming
         'discord' => 25,        // 25% - Community platform
-        'reddit' => 25,         // 25% - Forum style
+        'reddit' => 35,         // 25% - Forum style
         'tumblr' => 22,         // 22% - Niche platform
         
         // Lower-volume but stable
-        'telegram' => 20,       // 20% - Messaging app
-        'whatsapp' => 18,       // 18% - Personal messaging
+        'telegram' => 30,       // 20% - Messaging app
+        'whatsapp' => 30,       // 18% - Personal messaging
         'clubhouse' => 25,      // 25% - Audio social
         'vimeo' => 25,          // 25% - Video platform
         'dailymotion' => 22,    // 22% - Video platform
@@ -98,23 +98,23 @@ return [
     */
     'combined_markup' => [
         // Instagram combinations
-        'instagram_followers' => 35,        // Popular combo
-        'instagram_likes' => 28,            // Very common
-        'instagram_views' => 25,            // Story/reel views
+        'instagram_followers' => 40,        // Popular combo
+        'instagram_likes' => 35,            // Very common
+        'instagram_views' => 30,            // Story/reel views
         'instagram_comments' => 32,         // Higher value
         'instagram_saves' => 30,            // Engagement metric
         
         // TikTok combinations
-        'tiktok_followers' => 38,           // High demand
-        'tiktok_likes' => 30,               // Very popular
-        'tiktok_views' => 25,               // High volume
-        'tiktok_shares' => 28,              // Engagement
+        'tiktok_followers' => 40,           // High demand
+        'tiktok_likes' => 35,               // Very popular
+        'tiktok_views' => 30,               // High volume
+        'tiktok_shares' => 30,              // Engagement
         'tiktok_comments' => 32,            // Quality metric
         
         // YouTube combinations
         'youtube_subscribers' => 35,        // Valuable
-        'youtube_views' => 25,              // High volume
-        'youtube_likes' => 28,              // Engagement
+        'youtube_views' => 35,              // High volume
+        'youtube_likes' => 38,              // Engagement
         'youtube_comments' => 32,           // Quality signal
         'youtube_live' => 35,               // Live stream viewers
         
@@ -126,10 +126,10 @@ return [
         'x_retweets' => 30,                 // Same as Twitter
         
         // Facebook combinations
-        'facebook_followers' => 28,         // Page followers
-        'facebook_likes' => 25,             // Post likes
-        'facebook_shares' => 28,            // Viral potential
-        'facebook_views' => 22,             // Video views
+        'facebook_followers' => 30,         // Page followers
+        'facebook_likes' => 35,             // Post likes
+        'facebook_shares' => 38,            // Viral potential
+        'facebook_views' => 32,             // Video views
         
         // Spotify combinations
         'spotify_plays' => 32,              // Music plays
@@ -137,8 +137,8 @@ return [
         'spotify_saves' => 33,              // Playlist saves
         
         // Telegram combinations
-        'telegram_members' => 25,           // Channel members
-        'telegram_views' => 20,             // Post views
+        'telegram_members' => 35,           // Channel members
+        'telegram_views' => 30,             // Post views
         
         // LinkedIn combinations
         'linkedin_followers' => 35,         // Professional network
@@ -155,7 +155,7 @@ return [
     | Set conservatively to ensure margins
     |
     */
-    'minimum_markup' => 15, // Matches your fallback requirement
+    'minimum_markup' => 20, // Matches your fallback requirement
 
     /*
     |--------------------------------------------------------------------------
