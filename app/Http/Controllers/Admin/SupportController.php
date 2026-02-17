@@ -125,18 +125,18 @@ class SupportController extends Controller
                 'message_preview' => substr($request->message, 0, 100),
                 'old_status' => $oldStatus,
                 'new_status' => $ticket->status,
-            ]
+            ] 
         );
 
         // Send email notification to the user
         try {
             Mail::to($ticket->user->email)->send(new TicketReplyNotification($ticket, $message));
             
-            Log::info('Email sent to user for ticket reply', [
-                'ticket_id' => $ticket->id,
-                'user_email' => $ticket->user->email,
-                'admin_id' => Auth::guard('admin')->id()
-            ]);
+            // Log::info('Email sent to user for ticket reply', [
+            //     'ticket_id' => $ticket->id,
+            //     'user_email' => $ticket->user->email,
+            //     'admin_id' => Auth::guard('admin')->id()
+            // ]);
         } catch (\Exception $e) {
             Log::error('Failed to send ticket reply email', [
                 'ticket_id' => $ticket->id,
@@ -144,10 +144,10 @@ class SupportController extends Controller
             ]);
         }
 
-        Log::info('Admin replied to ticket', [
-            'ticket_id' => $ticket->id,
-            'admin_id' => Auth::guard('admin')->id()
-        ]);
+        // Log::info('Admin replied to ticket', [
+        //     'ticket_id' => $ticket->id,
+        //     'admin_id' => Auth::guard('admin')->id()
+        // ]);
 
         return redirect()->back()->with('alert', [
             'type' => 'success',
@@ -259,10 +259,10 @@ class SupportController extends Controller
             ]
         );
 
-        Log::info('Ticket reopened', [
-            'ticket_id' => $ticket->id,
-            'admin_id' => Auth::guard('admin')->id()
-        ]);
+        // Log::info('Ticket reopened', [
+        //     'ticket_id' => $ticket->id,
+        //     'admin_id' => Auth::guard('admin')->id()
+        // ]);
 
         return redirect()->back()->with('alert', [
             'type' => 'success',
@@ -289,11 +289,11 @@ class SupportController extends Controller
             'Deleted support ticket #' . $ticket->id . ': ' . $ticket->subject
         );
 
-        Log::warning('Ticket deleted', [
-            'ticket_id' => $ticket->id,
-            'subject' => $ticket->subject,
-            'admin_id' => Auth::guard('admin')->id()
-        ]);
+        // Log::warning('Ticket deleted', [
+        //     'ticket_id' => $ticket->id,
+        //     'subject' => $ticket->subject,
+        //     'admin_id' => Auth::guard('admin')->id()
+        // ]);
 
         $ticket->delete();
 
