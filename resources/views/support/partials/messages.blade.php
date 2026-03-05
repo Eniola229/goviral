@@ -3,20 +3,20 @@
         
         <div class="d-flex flex-column {{ $msg->is_admin ? 'align-items-start' : 'align-items-end' }}">
             
-            <!-- Sender Name & Time -->
+            <!-- Message Bubble -->
+            <div class="p-3 rounded {{ $msg->is_admin ? 'bg-light text-dark' : 'bg-primary text-white' }}" style="max-width: 70%;">
+                {{ $msg->message }}
+            </div>
+
             <small class="text-muted mb-1">
                 @if($msg->is_admin)
-                    <strong class="text-primary">Support</strong>
+                    <strong class="text-primary">{{ $msg->admin->name ?? 'Support' }}</strong>
                 @else
                     <strong>You</strong>
                 @endif
                 • {{ $msg->created_at->format('H:i') }}
             </small>
 
-            <!-- Message Bubble -->
-            <div class="p-3 rounded {{ $msg->is_admin ? 'bg-light text-dark' : 'bg-primary text-white' }}" style="max-width: 70%;">
-                {{ $msg->message }}
-            </div>
         </div>
     </div>
 @empty

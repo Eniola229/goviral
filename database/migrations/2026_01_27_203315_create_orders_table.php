@@ -26,7 +26,7 @@ return new class extends Migration
             $table->decimal('charge', 10, 2); 
             
             // Status
-            $table->enum('status', ['pending', 'processing', 'completed', 'cancelled', 'refunded'])->default('pending');
+            $table->enum('status', ['pending', 'processing', 'completed', 'cancelled', 'refunded', 'partial'])->default('pending');
             
             // The ID returned by api
             $table->string('api_order_id')->nullable(); 

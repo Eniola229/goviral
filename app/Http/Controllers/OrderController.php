@@ -174,6 +174,41 @@ class OrderController extends Controller
             ],
             ['status' => 'initiated']
         );
+
+        // --- DUPLICATE ORDER PREVENTION ---
+        $recentDuplicate = \App\Models\Order::where('user_id', $user->id)
+            ->where('service_id', $request->service_id)
+            ->where('link', $request->link)
+            ->where('quantity', $request->quantity)
+            ->whereIn('status', ['pending', 'processing', 'completed'])
+            ->where('created_at', '>=', now()->subMinutes(3))
+            ->lockForUpdate()
+            ->first();
+
+        if ($recentDuplicate) {
+            $this->logOrderAction(
+                'order_rejected',
+                $orderReference,
+                $charge,
+                'failed',
+                'Duplicate order detected',
+                [
+                    'duplicate_of' => $recentDuplicate->id,
+                    'service_id' => $request->service_id,
+                    'link' => $request->link,
+                    'quantity' => $request->quantity,
+                ],
+                null,
+                'Duplicate order'
+            );
+
+            return redirect()->back()->with('alert', [
+                'type' => 'error',
+                'message' => 'A similar order was recently placed. Please wait a few minutes before placing the same order again.'
+            ]);
+        }
+        // --- END DUPLICATE PREVENTION ---
+
         
         // 1. Check Balance (Double check)
         if ($user->balance < $charge) {
@@ -294,7 +329,7 @@ class OrderController extends Controller
                 $refundResult = WalletService::refund(
                     $user, 
                     $charge, 
-                    'Order Failed - API Error: ' . $errorMessage,
+                    'Order Failed',
                     $orderReference
                 );
 
@@ -328,6 +363,27 @@ class OrderController extends Controller
             }
 
         } catch (\Exception $e) {
+
+            // --- INSUFFICIENT FUNDS (thrown by WalletService lock check) ---
+            if ($e->getMessage() === 'Insufficient funds') {
+                $this->logOrderAction(
+                    'order_failed',
+                    $orderReference,
+                    $charge,
+                    'failed',
+                    'Insufficient wallet balance',
+                    ['balance' => $user->fresh()->balance, 'required' => $charge],
+                    null,
+                    'Insufficient funds'
+                );
+
+                return redirect()->back()->with('alert', [
+                    'type' => 'error',
+                    'message' => 'Insufficient wallet balance.'
+                ]);
+            }
+            // --- END INSUFFICIENT FUNDS ---
+
             // Log exception
             $this->logOrderAction(
                 'system_error',
@@ -349,7 +405,7 @@ class OrderController extends Controller
                     WalletService::refund(
                         $user, 
                         $charge, 
-                        'System Error - ' . $e->getMessage(),
+                        'System Error',
                         $orderReference
                     );
 
@@ -394,9 +450,16 @@ class OrderController extends Controller
     }
 
     // Order History - WITH AUTO STATUS UPDATE
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Auth::user()->orders()->latest()->paginate(10);
+        $query = Auth::user()->orders()->latest();
+        
+        // Apply status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        $orders = $query->paginate(10)->withQueryString();
         
         // Auto-update status for pending/processing orders
         $this->autoUpdateOrderStatuses($orders);
@@ -521,7 +584,7 @@ class OrderController extends Controller
                 $refundResult
             );
 
-            \Log::info('Auto-refund processed for order ' . $order->id . ' - Amount: ₦' . number_format($order->charge, 2));
+            // \Log::info('Auto-refund processed for order ' . $order->id . ' - Amount: ₦' . number_format($order->charge, 2));
 
         } catch (\Exception $e) {
             \Log::error('Auto-refund failed for order ' . $order->id . ': ' . $e->getMessage());
@@ -691,7 +754,7 @@ class OrderController extends Controller
 
         return redirect()->back()->with('alert', [
             'type' => 'error',
-            'message' => $errorMessage
+            'message' => 'Failed to create refill'
         ]);
     }
 

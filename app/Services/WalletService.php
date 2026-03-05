@@ -92,16 +92,18 @@ class WalletService
     public static function withdraw(User $user, $amount, $reference, $paymentMethod = 'Internal Order', $description = 'New Order')
     {
         return DB::transaction(function () use ($user, $amount, $reference, $paymentMethod, $description) {
+            
+            // Lock the user row — blocks any concurrent requests until this transaction completes
+            $user = User::lockForUpdate()->find($user->id);
+
             if ($user->balance < $amount) {
                 throw new \Exception('Insufficient funds');
             }
 
             // Capture Balance Before
             $balanceBefore = $user->balance;
-
             // Calculate Balance After
             $balanceAfter = $balanceBefore - $amount;
-
             // Save the Ledger Entry
             Wallet::create([
                 'user_id' => $user->id,
@@ -114,10 +116,8 @@ class WalletService
                 'payment_method' => $paymentMethod,
                 'status' => 'success'
             ]);
-
-            // 4. Update User Balance
+            // Update User Balance
             $user->decrement('balance', $amount);
-
             return true;
         });
     }

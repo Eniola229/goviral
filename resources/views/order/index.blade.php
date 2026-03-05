@@ -33,6 +33,32 @@
                                     </button>
                                 </div>
                             </div>
+
+                            {{-- Filter Bar --}}
+                            <div class="card-body border-bottom p-3">
+                                <form method="GET" action="{{ route('orders.index') }}" class="d-flex flex-wrap gap-2 align-items-center">
+                                    @php
+                                        $statuses = [
+                                            ''           => ['label' => 'All Orders',  'icon' => 'feather-list',        'active' => 'btn-secondary',  'text' => 'text-white'],
+                                            'pending'    => ['label' => 'Pending',     'icon' => 'feather-clock',       'active' => 'btn-primary',    'text' => 'text-white'],
+                                            'processing' => ['label' => 'Processing',  'icon' => 'feather-loader',      'active' => 'btn-warning',    'text' => 'text-white'],
+                                            'completed'  => ['label' => 'Completed',   'icon' => 'feather-check-circle','active' => 'btn-success',    'text' => 'text-white'],
+                                            'partial'    => ['label' => 'Partial',     'icon' => 'feather-pie-chart',   'active' => 'btn-info',       'text' => 'text-white'],
+                                            'cancelled'  => ['label' => 'Cancelled',   'icon' => 'feather-x-circle',    'active' => 'btn-danger',     'text' => 'text-white'],
+                                        ];
+                                        $current = request('status', '');
+                                    @endphp
+
+                                    @foreach($statuses as $value => $meta)
+                                        <button type="submit" name="status" value="{{ $value }}"
+                                            class="btn btn-sm {{ $current === $value ? $meta['active'] : 'btn-light' }}">
+                                            <i class="{{ $meta['icon'] }} me-1"></i>
+                                            {{ $meta['label'] }}
+                                        </button>
+                                    @endforeach
+                                </form>
+                            </div>
+
                             <div class="card-body custom-card-action p-0">
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0">
@@ -99,7 +125,16 @@
                                             @empty
                                                 <tr>
                                                     <td colspan="8" class="text-center py-5">
-                                                        <div class="text-muted mb-3">No orders found.</div>
+                                                        <div class="text-muted mb-3">
+                                                            @if($current)
+                                                                No {{ ucfirst($current) }} orders found.
+                                                            @else
+                                                                No orders found.
+                                                            @endif
+                                                        </div>
+                                                        @if($current)
+                                                            <a href="{{ route('orders.index') }}" class="btn btn-light btn-sm me-2">View All Orders</a>
+                                                        @endif
                                                         <a href="{{ route('order.create') }}" class="btn btn-primary btn-sm">Place Your First Order</a>
                                                     </td>
                                                 </tr>
@@ -108,6 +143,7 @@
                                     </table>
                                 </div>
                             </div>
+
                             <!-- Pagination -->
                             <div class="card-footer">
                                 {{ $orders->links() }}
@@ -156,7 +192,6 @@
     <script>
         // Show the Accpond promotion modal on every page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Show modal after 1 second delay
             setTimeout(function() {
                 const modal = new bootstrap.Modal(document.getElementById('accpondPromoModal'));
                 modal.show();
