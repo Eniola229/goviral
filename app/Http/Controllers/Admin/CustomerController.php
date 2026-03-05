@@ -172,50 +172,54 @@ class CustomerController extends Controller
     /**
      * Update customer
      */
-    public function update(Request $request, $id)
-    {
-        if (!auth('admin')->user()->canEditCustomer()) {
-            abort(403, 'Unauthorized action.');
+        public function update(Request $request, $id)
+        {
+            if (!auth('admin')->user()->canEditCustomer()) {
+                abort(403, 'Unauthorized action.');
+            }
+
+            $customer = User::findOrFail($id);
+
+            $request->validate([
+                'name'     => 'required|string|max:255',
+                'email'    => 'required|email|unique:users,email,' . $id,
+                'password' => 'nullable|min:6',
+                'status'   => 'required|in:ACTIVE,BLOCK',
+            ]);
+
+            $oldData = [
+                'name'   => $customer->name,
+                'email'  => $customer->email,
+                'status' => $customer->status,
+            ];
+
+            $data = [
+                'name'   => $request->name,
+                'email'  => $request->email,
+                'status' => $request->status,
+            ];
+
+            if ($request->password) {
+                $data['password'] = Hash::make($request->password);
+            }
+
+            $customer->update($data);
+
+            // Log the update
+            $this->logUpdated(
+                'User',
+                $customer->id,
+                auth('admin')->user()->name . ' updated customer: ' . $customer->name,
+                [
+                    'name'   => ['old' => $oldData['name'],   'new' => $customer->name],
+                    'email'  => ['old' => $oldData['email'],  'new' => $customer->email],
+                    'status' => ['old' => $oldData['status'], 'new' => $customer->status],
+                ]
+            );
+
+            return redirect()->route('admin.customers.show', $id)
+                ->with('success', 'Customer updated successfully');
         }
-
-        $customer = User::findOrFail($id);
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'password' => 'nullable|min:6',
-        ]);
-
-        $oldData = [
-            'name' => $customer->name,
-            'email' => $customer->email,
-        ];
-
-        $data = [
-            'name' => $request->name,
-            'email' => $request->email,
-        ];
-
-        if ($request->password) {
-            $data['password'] = Hash::make($request->password);
-        }
-
-        $customer->update($data);
-
-        // Log the update
-        $this->logUpdated(
-            'User',
-            $customer->id,
-            auth('admin')->user()->name . ' updated customer: ' . $customer->name,
-            [
-                'name' => ['old' => $oldData['name'], 'new' => $customer->name],
-                'email' => ['old' => $oldData['email'], 'new' => $customer->email],
-            ]
-        );
-
-        return redirect()->route('admin.customers.show', $id)
-            ->with('success', 'Customer updated successfully');
-    }
 
     /**
      * Adjust customer wallet balance (Super Admin & Accountant only)

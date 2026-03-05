@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('status')->nullable();
             
             // THIS IS CRITICAL
             $table->decimal('balance', 15, 2)->default(0.00);

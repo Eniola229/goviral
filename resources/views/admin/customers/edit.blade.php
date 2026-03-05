@@ -36,7 +36,7 @@
                         <div class="card-header">
                             <h5 class="card-title">Customer Information</h5>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body"> 
                             <form method="POST" action="{{ route('admin.customers.update', $customer->id) }}">
                                 @csrf
                                 @method('PUT')
@@ -73,19 +73,25 @@
                                 </div>
                                 @endif
 
-              <!--                   <div class="mb-4">
-                                    <label for="password" class="form-label">New Password (Optional)</label>
-                                    <input type="password" 
-                                           class="form-control @error('password') is-invalid @enderror" 
-                                           id="password" 
-                                           name="password" 
-                                           placeholder="Leave blank to keep current password">
-                                    <small class="text-muted">Only fill this if you want to change the customer's password</small>
-                                    @error('password')
+    
+                                <div class="mb-4">
+                                    <label for="status" class="form-label">Account Status</label>
+                                    <select class="form-select @error('status') is-invalid @enderror" id="status" name="status">
+                                        <option value="ACTIVE" {{ old('status', $customer->status) === 'ACTIVE' ? 'selected' : '' }}>
+                                            ✅ Active
+                                        </option>
+                                        <option value="BLOCK" {{ old('status', $customer->status) === 'BLOCK' ? 'selected' : '' }}>
+                                            🚫 Blocked
+                                        </option>
+                                    </select>
+                                    @error('status')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                </div> -->
-
+                                    <div class="form-text">
+                                        Blocked customers will be prevented from logging in.
+                                    </div>
+                                </div>
+                                
                                 <div class="alert alert-warning">
                                     <i class="feather-alert-triangle me-2"></i>
                                     <strong>Warning:</strong> All changes will be logged and visible to Super Admins. Make sure you have authorization to edit this customer's information.

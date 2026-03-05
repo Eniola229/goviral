@@ -22,28 +22,36 @@ class AuthenticatedSessionController extends Controller
     {
         // 1. Authenticate user
         $request->authenticate();
-        
-        // 2. Regenerate session
-        $request->session()->regenerate();
-        
-        // 3. Get authenticated user
+
+        // 2. Check if user is blocked BEFORE regenerating session
         $user = Auth::user();
-        
+
+        if ($user && $user->status === 'BLOCK') {
+            // Log them back out immediately
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'email' => 'Your account has been blocked. Please contact support.',
+            ])->onlyInput('email');
+        }
+
+        // 3. Regenerate session
+        $request->session()->regenerate();
+
+        // 4. Send login notification
         if ($user) {
             try {
-                // Send login notification
                 $user->notify(new UserLoggedIn($user));
-                //Log::info('Login notification sent for user: ' . $user->id);
             } catch (\Exception $e) {
-                // Log error but don't break the login flow
                 Log::error('Failed to send login notification: ' . $e->getMessage());
                 Log::error('Stack trace: ' . $e->getTraceAsString());
             }
         }
-        
+
         return redirect()->intended(route('dashboard'));
     }
-
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
