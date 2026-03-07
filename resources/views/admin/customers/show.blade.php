@@ -58,7 +58,12 @@
                                 </div>
                                 <h5 class="mb-1">{{ $customer->name }}</h5>
                                 <p class="fs-12 text-muted mb-3">{{ $customer->email }}</p>
-                                <span class="badge bg-soft-success text-success">Active Customer</span>
+
+                                @if($customer->status === 'BLOCK')
+                                    <span class="badge bg-soft-danger text-danger">Blocked Customer</span>
+                                @else
+                                    <span class="badge bg-soft-success text-success">Active Customer</span>
+                                @endif
                             </div>
                             
                             <div class="mb-4">
@@ -84,7 +89,7 @@
                                 </div>
                             </div>
 
-                            <div class="d-grid gap-2">
+                            <div class="d-grid gap-3">
                                 @if(auth('admin')->user()->canEditCustomer())
                                     <a href="{{ route('admin.customers.edit', $customer->id) }}" class="btn btn-primary">
                                         <i class="feather-edit me-2"></i> Edit Customer
@@ -95,6 +100,20 @@
                                     <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#adjustBalanceModal">
                                         <i class="feather-dollar-sign me-2"></i> Adjust Balance
                                     </button>
+                                @endif
+                                
+                                @if(auth('admin')->user()->canEditCustomer())
+                                    <form method="POST" action="{{ route('admin.customers.update', $customer->id) }}">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="name"   value="{{ $customer->name }}">
+                                        <input type="hidden" name="email"  value="{{ $customer->email }}">
+                                        <input type="hidden" name="status" value="{{ $customer->status === 'BLOCK' ? 'ACTIVE' : 'BLOCK' }}">
+                                        <button type="submit" class="btn w-100 {{ $customer->status === 'BLOCK' ? 'btn-success' : 'btn-danger' }}">
+                                            <i class="feather-{{ $customer->status === 'BLOCK' ? 'unlock' : 'lock' }} me-2"></i>
+                                            {{ $customer->status === 'BLOCK' ? 'Unblock Customer' : 'Block Customer' }}
+                                        </button>
+                                    </form>
                                 @endif
                             </div>
                         </div>
