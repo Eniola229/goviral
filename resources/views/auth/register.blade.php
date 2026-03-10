@@ -14,7 +14,7 @@
                     <h2 class="fs-20 fw-bolder mb-4">Register</h2>
                     <h4 class="fs-13 fw-bold mb-2">Create your account</h4>
                     <p class="fs-12 fw-medium text-muted">
-                        Thank you for joining <strong>Viral</strong>, let’s create your account to get started.
+                        Thank you for joining <strong>Booster</strong>, let’s create your account to get started.
                     </p>
                     
                     <form method="POST" action="{{ route('register') }}" class="w-100 mt-4 pt-2">

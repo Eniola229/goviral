@@ -74,16 +74,17 @@ class DashboardController extends Controller
         $ordersYear = Order::whereYear('created_at', now()->year)->count();
 
         // Revenue in period
-        $revenueInPeriod = Order::whereBetween('created_at', $dateRange)->sum('charge');
-        $revenueToday = Order::whereDate('created_at', today())->sum('charge');
+        $revenueInPeriod = Order::whereBetween('created_at', $dateRange)->where('status', 'completed')->sum('charge');
+        $revenueToday = Order::whereDate('created_at', today())->where('status', 'completed')->sum('charge');
         $revenueWeek = Order::whereBetween('created_at', [
             Carbon::now()->startOfWeek(),
             Carbon::now()->endOfWeek()
-        ])->sum('charge');
+        ])->where('status', 'completed')->sum('charge');
         $revenueMonth = Order::whereMonth('created_at', now()->month)
+        ->where('status', 'completed')
             ->whereYear('created_at', now()->year)
             ->sum('charge');
-        $revenueYear = Order::whereYear('created_at', now()->year)->sum('charge');
+        $revenueYear = Order::whereYear('created_at', now()->year)->where('status', 'completed')->sum('charge');
 
         // WALLET STATISTICS
         $totalDeposits = Wallet::where('type', 'credit')
@@ -91,40 +92,48 @@ class DashboardController extends Controller
             ->count();
 
         $depositsInPeriod = Wallet::where('type', 'credit')
+        ->where('status', 'success')
             ->whereBetween('created_at', $dateRange)
             ->count();
         
         // Deposits by period
         $depositsToday = Wallet::where('type', 'credit')
+            ->where('status', 'success')
             ->whereDate('created_at', today())
             ->count();
         $depositsWeek = Wallet::where('type', 'credit')
+        ->where('status', 'success')
             ->whereBetween('created_at', [
                 Carbon::now()->startOfWeek(),
                 Carbon::now()->endOfWeek()
             ])->count();
         $depositsMonth = Wallet::where('type', 'credit')
+        ->where('status', 'success')
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
         $depositsYear = Wallet::where('type', 'credit')
+        ->where('status', 'success')
             ->whereYear('created_at', now()->year)
             ->count();
 
         // Deposit amounts by period
         $depositAmountToday = Wallet::where('type', 'credit')
             ->whereDate('created_at', today())
+            ->where('status', 'success')
             ->sum('amount');
         $depositAmountWeek = Wallet::where('type', 'credit')
             ->whereBetween('created_at', [
                 Carbon::now()->startOfWeek(),
                 Carbon::now()->endOfWeek()
-            ])->sum('amount');
+            ])->where('status', 'success')->sum('amount');
         $depositAmountMonth = Wallet::where('type', 'credit')
+        ->where('status', 'success')
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('amount');
         $depositAmountYear = Wallet::where('type', 'credit')
+        ->where('status', 'success')
             ->whereYear('created_at', now()->year)
             ->sum('amount');
 
