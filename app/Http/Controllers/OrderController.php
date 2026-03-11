@@ -469,7 +469,7 @@ class OrderController extends Controller
             $query->where('status', $request->status);
         }
         
-        $orders = $query->paginate(10)->withQueryString();
+        $orders = $query->paginate(30)->withQueryString();
         
         // Auto-update status for pending/processing orders
         $this->autoUpdateOrderStatuses($orders);

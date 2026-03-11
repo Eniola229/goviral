@@ -23,8 +23,8 @@ return new class extends Migration
             
             $table->string('link'); // Social media link
             $table->integer('quantity'); 
-            $table->decimal('charge', 10, 2); 
-            $table->decimal('profit', 10, 2)->nullable(); 
+            $table->decimal('charge', 12, 2); 
+            $table->decimal('profit', 12, 2)->nullable(); 
             $table->string('markup_percentage')->nullable()
             
             // Status
