@@ -123,14 +123,26 @@
                             </div>
 
                             @php
-                                // Calculate profit breakdown
-                                $profitBreakdown = \App\Services\PricingService::getProfitBreakdown(
-                                    $order->charge,
-                                    $order->quantity,
-                                    $order->service_name
-                                );
+                                // Use stored profit if available, otherwise calculate on the fly
+                                if ($order->profit !== null) {
+                                    $profitAmount = $order->profit;
+                                    $profitMargin = $order->charge > 0 ? ($profitAmount / $order->charge) * 100 : 0;
+                                    $profitBreakdown = [
+                                        'profit_amount'     => $profitAmount,
+                                        'profit_margin'     => $profitMargin,
+                                        'original_cost'     => $order->charge - $profitAmount,
+                                        'markup_percentage' => $order->markup_percentage ?? \App\Services\PricingService::getMarkupPercentage(
+                                            $order->service_name
+                                        ),
+                                    ];
+                                } else {
+                                    $profitBreakdown = \App\Services\PricingService::getProfitBreakdown(
+                                        $order->charge,
+                                        $order->quantity,
+                                        $order->service_name
+                                    );
+                                }
                             @endphp
-
                             <!-- Profit Section -->
                             <div class="mb-3 pb-3 border-bottom bg-soft-primary rounded p-2">
                                 <div class="d-flex justify-content-between mb-2">

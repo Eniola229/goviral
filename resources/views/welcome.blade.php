@@ -1318,7 +1318,7 @@
             </div>
             <div class="footer-col">
                 <h4>Contact</h4>
-                <div class="contact-item"><i class="fas fa-envelope"></i> booster@africicl.com.ng</div>
+                <div class="contact-item"><i class="fas fa-envelope"></i> info@boosterr.xyz</div>
                 <div class="contact-item"><i class="fab fa-whatsapp"></i> 09152880128<br><small style="opacity:.6">(WhatsApp only)</small></div>
                 <div class="contact-item"><i class="fas fa-map-marker-alt"></i> Lagos, Nigeria</div>
             </div>

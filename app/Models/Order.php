@@ -17,6 +17,8 @@ class Order extends Model
         'link', 
         'quantity', 
         'charge', 
+        'profit',
+        'markup_percentage',
         'status', 
         'api_order_id', 
         'api_response'

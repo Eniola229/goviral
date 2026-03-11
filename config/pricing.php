@@ -10,7 +10,7 @@ return [
     | Set to 15% as requested for uncaught services
     |
     */
-    'default_markup' => 15, // 15% fallback for unknown services
+    'default_markup' => 35, // 15% fallback for unknown services
 
     /*
     |--------------------------------------------------------------------------
@@ -22,14 +22,14 @@ return [
     |
     */
     'service_type_markup' => [
-        'followers' => 35,      // 35% - High demand, good margins
-        'likes' => 25,          // 25% - Very common, keep competitive
-        'comments' => 30,       // 30% - Medium demand
-        'shares' => 25,         // 25% - Similar to likes
-        'views' => 20,          // 20% - High volume, stay competitive
-        'subscribers' => 35,    // 35% - Similar to followers
+        'followers' => 40,      // 35% - High demand, good margins
+        'likes' => 40,          // 25% - Very common, keep competitive
+        'comments' => 40,       // 30% - Medium demand
+        'shares' => 35,         // 25% - Similar to likes
+        'views' => 30,          // 20% - High volume, stay competitive
+        'subscribers' => 40,    // 35% - Similar to followers
         'retweets' => 25,       // 25% - Twitter specific
-        'saves' => 25,          // 25% - Instagram/TikTok
+        'saves' => 30,          // 25% - Instagram/TikTok
         'reach' => 20,          // 20% - Impressions/reach services
         'impressions' => 20,    // 20% - Similar to reach
         'story' => 25,          // 25% - Story views
@@ -99,51 +99,51 @@ return [
     'combined_markup' => [
         // Instagram combinations
         'instagram_followers' => 40,        // Popular combo
-        'instagram_likes' => 35,            // Very common
-        'instagram_views' => 30,            // Story/reel views
-        'instagram_comments' => 32,         // Higher value
-        'instagram_saves' => 30,            // Engagement metric
+        'instagram_likes' => 45,            // Very common
+        'instagram_views' => 40,            // Story/reel views
+        'instagram_comments' => 42,         // Higher value
+        'instagram_saves' => 40,            // Engagement metric
         
         // TikTok combinations
         'tiktok_followers' => 40,           // High demand
-        'tiktok_likes' => 35,               // Very popular
-        'tiktok_views' => 30,               // High volume
-        'tiktok_shares' => 30,              // Engagement
-        'tiktok_comments' => 32,            // Quality metric
+        'tiktok_likes' => 45,               // Very popular
+        'tiktok_views' => 40,               // High volume
+        'tiktok_shares' => 40,              // Engagement
+        'tiktok_comments' => 42,            // Quality metric
         
         // YouTube combinations
-        'youtube_subscribers' => 35,        // Valuable
-        'youtube_views' => 35,              // High volume
+        'youtube_subscribers' => 45,        // Valuable
+        'youtube_views' => 45,              // High volume
         'youtube_likes' => 38,              // Engagement
-        'youtube_comments' => 32,           // Quality signal
-        'youtube_live' => 35,               // Live stream viewers
+        'youtube_comments' => 42,           // Quality signal
+        'youtube_live' => 45,               // Live stream viewers
         
         // Twitter/X combinations
         'twitter_followers' => 38,          // High value
-        'twitter_retweets' => 30,           // Viral potential
+        'twitter_retweets' => 40,           // Viral potential
         'twitter_likes' => 28,              // Common
         'x_followers' => 38,                // Same as Twitter
-        'x_retweets' => 30,                 // Same as Twitter
+        'x_retweets' => 40,                 // Same as Twitter
         
         // Facebook combinations
-        'facebook_followers' => 30,         // Page followers
-        'facebook_likes' => 35,             // Post likes
+        'facebook_followers' => 40,         // Page followers
+        'facebook_likes' => 45,             // Post likes
         'facebook_shares' => 38,            // Viral potential
-        'facebook_views' => 32,             // Video views
+        'facebook_views' => 42,             // Video views
         
         // Spotify combinations
-        'spotify_plays' => 32,              // Music plays
-        'spotify_followers' => 35,          // Artist followers
+        'spotify_plays' => 42,              // Music plays
+        'spotify_followers' => 45,          // Artist followers
         'spotify_saves' => 33,              // Playlist saves
         
         // Telegram combinations
-        'telegram_members' => 35,           // Channel members
-        'telegram_views' => 30,             // Post views
+        'telegram_members' => 45,           // Channel members
+        'telegram_views' => 40,             // Post views
         
         // LinkedIn combinations
-        'linkedin_followers' => 35,         // Professional network
-        'linkedin_connections' => 35,       // Personal connections
-        'linkedin_likes' => 30,             // Post engagement
+        'linkedin_followers' => 45,         // Professional network
+        'linkedin_connections' => 45,       // Personal connections
+        'linkedin_likes' => 40,             // Post engagement
     ],
 
     /*

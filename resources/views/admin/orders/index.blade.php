@@ -204,7 +204,7 @@
                                     
                                     // Calculate total profit
                                     $totalProfit = $allOrders->sum(function($order) {
-                                        return \App\Services\PricingService::calculateProfit(
+                                        return $order->profit ?? \App\Services\PricingService::calculateProfit(
                                             $order->charge, 
                                             $order->quantity, 
                                             $order->service_name
@@ -284,14 +284,13 @@
                         <tbody>
                             @forelse($orders as $orderItem)
                                 @php
-                                    // Calculate profit for this order
-                                    $profit = \App\Services\PricingService::calculateProfit(
+                                    // Use stored profit if available, fallback to calculated
+                                    $profit = $orderItem->profit ?? \App\Services\PricingService::calculateProfit(
                                         $orderItem->charge, 
                                         $orderItem->quantity, 
                                         $orderItem->service_name
                                     );
                                     
-                                    // Calculate profit percentage
                                     $profitPercentage = $orderItem->charge > 0 
                                         ? (($profit / $orderItem->charge) * 100) 
                                         : 0;

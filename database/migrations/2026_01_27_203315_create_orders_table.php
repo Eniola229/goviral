@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('link'); // Social media link
             $table->integer('quantity'); 
             $table->decimal('charge', 10, 2); 
+            $table->decimal('profit', 10, 2)->nullable(); 
+            $table->string('markup_percentage')->nullable()
             
             // Status
             $table->enum('status', ['pending', 'processing', 'completed', 'cancelled', 'refunded', 'partial'])->default('pending');

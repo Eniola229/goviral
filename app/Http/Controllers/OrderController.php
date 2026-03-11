@@ -93,7 +93,7 @@ class OrderController extends Controller
             'quantity' => 'required|integer|min:10',
             'charge' => 'required|numeric|min:0',
         ]);
-
+ 
         $user = Auth::user();
         $orderReference = 'ORD-' . strtoupper(Str::random(8));
 
@@ -261,19 +261,29 @@ class OrderController extends Controller
             // 4. Handle API Response
             if (isset($apiResponse['order']) && is_numeric($apiResponse['order'])) {
 
-                // SUCCESS: Save Order
-                $order = Order::create([
-                    'user_id' => $user->id,
-                    'service_id' => $request->service_id,
-                    'service_name' => $request->service_name,
-                    'link' => $request->link,
-                    'quantity' => $request->quantity,
-                    'charge' => $charge,
-                    'status' => 'processing',
-                    'api_order_id' => $apiResponse['order'],
-                    'api_response' => json_encode($apiResponse),
-                ]);
+            // Calculate profit and markup for this order
+            $profit = \App\Services\PricingService::calculateProfit(
+                $charge,
+                $request->quantity,
+                $request->service_name
+            );
 
+            $markupPercentage = \App\Services\PricingService::getMarkupPercentage($request->service_name);
+
+            // SUCCESS: Save Order
+            $order = Order::create([
+                'user_id'          => $user->id,
+                'service_id'       => $request->service_id,
+                'service_name'     => $request->service_name,
+                'link'             => $request->link,
+                'quantity'         => $request->quantity,
+                'charge'           => $charge,
+                'status'           => 'processing',
+                'api_order_id'     => $apiResponse['order'],
+                'api_response'     => json_encode($apiResponse),
+                'profit'           => $profit,
+                'markup_percentage' => $markupPercentage,
+            ]);
                 // Log successful order
                 $this->logOrderAction(
                     'order_success',
